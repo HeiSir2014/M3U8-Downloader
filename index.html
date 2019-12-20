@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HLS Downloader</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="heisir">
+    <div class="header"><span class="title">HLS Downloader - By HeiSir QQ:1586462</span><button class="close"></button></div>
+    <div class="main">
+        <div class="addTask">
+            <input type="text" placeholder="请输入m3u8地址">
+            <input type="button" value="下载">
+            <label><input class="setting_isdelts" type="checkbox" onclick="setting_isdelts()" checked />删除TS文件</label>
+            <div class="info"></div>
+        </div>
+        <div class="TaskList">
+            <div class="item template" style="display: none;">
+                <div class="m3u8"></div>
+                <div class="link"></div>
+                <div class="time"><span >时间：</span><span class="value">2019-12-16 15:06:00</span></div>
+                <div class="status">
+                    <span >状态：</span><span class="value">正在下载</span>
+                </div>
+                <div class="opt top">
+                    <input class="opendir" type="button" value="打开文件夹">
+                </div>
+                <div class="opt bottom">
+                    <input class="del" type="button" value="删除">
+                    <input class="play" type="button" value="播放">
+                </div>
+            </div>
+            <div class="empty">
+                <span>当前还没有下载视频</span>
+            </div>
+        </div>
+    </div>
+    <script src="render.js"></script>
+</body>
+</html>

@@ -1,12 +1,22 @@
 const {ipcRenderer} = require('electron');
+const {shell} = require('electron').remote;
 
 var btnClose = document.querySelector('.heisir .header .close');
+var ahome = document.querySelector('.heisir .header .home');
+var aqqgroup = document.querySelector('.heisir .header .qqgroup');
 btnClose.onclick = function(){
-    window.close();
+    ipcRenderer.send('hide-windows');
 };
+
+aqqgroup.onclick = ahome.onclick = function(e){
+    e.preventDefault();
+    let href=this.href;
+    shell.openExternal(href);
+}
 
 var input_url = document.querySelector('.heisir .main .addTask input[type=text]');
 var btnAddTask = document.querySelector('.heisir .main .addTask input[type=button]');
+var info = document.querySelector('.heisir .main .addTask .info');
 var info = document.querySelector('.heisir .main .addTask .info');
 
 btnAddTask.onclick = function(){

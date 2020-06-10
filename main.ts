@@ -9,6 +9,7 @@ const HTTPPlus = require('./HTTPPlus');
 const fs = require('fs');
 const queue = require('queue');
 const dateFormat = require('dateformat');
+const download = require('download');
 
 let isdelts = true;
 let mainWindow = null;
@@ -35,7 +36,7 @@ function createWindow() {
 	mainWindow.setMenu(null)
 	// 加载index.html文件
 	mainWindow.loadFile(path.join(__dirname, 'index.html'));
-
+	//mainWindow.openDevTools();
 	// 当 window 被关闭，这个事件会被触发。
 	mainWindow.on('closed', () => {
 		// 取消引用 window 对象，如果你的应用支持多窗口的话，
@@ -128,6 +129,12 @@ app.on('activate', () => {
 	}
 })
 
+ipcMain.on("hide-windows",function(){
+	if (mainWindow != null) {
+		mainWindow.hide();
+	}
+});
+
 ipcMain.on('get-all-videos', function (event, arg) {
 
     event.sender.send('get-all-videos-reply', configVideos);
@@ -175,6 +182,7 @@ ipcMain.on('task-add', function (event, arg:string) {
 function startDownload(url:string, parser:any) {
 	let partent_uri = url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
 	let id = new Date().getTime();
+
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
 	console.log(dir);
 	let filesegments = [];
@@ -195,7 +203,7 @@ function startDownload(url:string, parser:any) {
 	mainWindow.webContents.send('task-notify-create',video);
 	parser.manifest.segments.forEach(segment => {
 		console.log(`1 ${segment.uri}`);
-		q.push((cb) => {
+		q.push(async (cb) => {
 			let uri_ts = '';
 			if (/^http.*/.test(segment.uri)) {
 				uri_ts = segment.uri;
@@ -204,7 +212,35 @@ function startDownload(url:string, parser:any) {
 				uri_ts = partent_uri + segment.uri;
 			}
 			console.log(`2 ${segment.uri}`);
-			let filpath = path.join(dir, segment.uri.replace(/(^.*\/)|(\?.*$)/g, ''));
+			let filename = segment.uri.replace(/(^.*\/)|(\?.*$)/g, '');
+			let filpath = path.join(dir, filename);
+			//检测文件是否存在
+			for (let index = 0; index < 3; index++) {
+				if(!fs.existsSync(filpath))
+				{
+					// 下载的时候使用.dl后缀的文件名，下载完成后重命名
+					await download (uri_ts, dir, {filename: filename + ".dl"}).then(()=>{
+						fs.renameSync(filpath+".dl",filpath);
+					}).catch(()=>{
+						try {
+							fs.unlinkSync(filpath+".dl");
+						} catch (derror) {
+							console.log(derror);
+						}
+					});
+				}
+				if(fs.existsSync(filpath))
+				{
+					console.log(`3 ${segment.uri}`);
+					count_downloaded = count_downloaded + 1
+					video.segment_downloaded = count_downloaded;
+					video.status = `下载中...${count_downloaded}/${count_seg}`
+					mainWindow.webContents.send('task-notify-update',video);
+					break;
+				}
+			}
+			cb(null,"success");
+			/*
 			HTTPPlus.downloadFileSync(uri_ts, filpath, 'GET', null, null, (res_data,error) => {
 				console.log(`3 ${segment.uri}`);
 				count_downloaded = count_downloaded + 1
@@ -213,7 +249,7 @@ function startDownload(url:string, parser:any) {
 				mainWindow.webContents.send('task-notify-update',video);
 
 				cb(error,res_data);
-			});
+			});*/
 		});
 	});
 	q.start(()=>{
@@ -236,9 +272,16 @@ function startDownload(url:string, parser:any) {
 
 			if(isdelts)
 			{
-				fs.unlinkSync(path.join(dir,'index.txt'));
+				let index_path = path.join(dir,'index.txt');
+				if(fs.existsSync(index_path))
+				{
+					fs.unlinkSync(index_path);
+				}
 				filesegments.forEach(fileseg=>{
-					fs.unlinkSync(fileseg);
+					if(fs.existsSync(fileseg))
+					{
+						fs.unlinkSync(fileseg);
+					}
 				});
 			}
 

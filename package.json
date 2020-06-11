@@ -4,6 +4,8 @@
   "description": "hls 下载器，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
+    "async": "^3.2.0",
+    "crypto-js": "^4.0.0",
     "dateformat": "^3.0.3",
     "download": "^8.0.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -20,7 +22,7 @@
     "complie": "tsc main.ts",
     "start": "electron .",
     "start2": "npm run complie && electron .",
-    "package": "npm run complie && electron-packager . m3u8-downloader --asar -unpack=ffmpeg.exe --win --icon=.\\icon\\logo.ico --out ../dist2 --all --electron-version=7.1.7 --overwrite"
+    "package": "npm run complie && electron-packager . m3u8-downloader --asar --platform=win32 --arch=x64 --ignore=^/.git -unpack=ffmpeg.exe --icon=.\\icon\\logo.ico --out ../dist --electron-version=9.0.3 --overwrite "
   },
   "author": "heisir qq:1586462",
   "license": "ISC"

@@ -50,7 +50,7 @@ function addVideo(data)
     newItem.className = "item";
     newItem.style.display = '';
     newItem.id = "_" + data.id;
-    newItem.querySelector('.link').innerHTML = data.url;
+    newItem.querySelector('.link input').value = data.url;
     newItem.querySelector('.time .value').innerHTML = data.time;
     newItem.querySelector('.status .value').innerHTML = data.status;
     newItem.querySelector('.opendir').setAttribute('dir',data.dir);

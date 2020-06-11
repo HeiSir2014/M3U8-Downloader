@@ -41,14 +41,17 @@ var path = require('path');
 var Parser = require('m3u8-parser').Parser;
 var HTTPPlus = require('./HTTPPlus');
 var fs = require('fs');
-var queue = require('queue');
+var async = require('async');
 var dateFormat = require('dateformat');
 var download = require('download');
+var AES = require("crypto-js/aes");
+var crypto = require('crypto');
 var isdelts = true;
 var mainWindow = null;
 var playerWindow = null;
 var tray = null;
 var AppTitle = 'HLS Downloader';
+var firstHide = true;
 var configVideos = [];
 function createWindow() {
     // 创建浏览器窗口
@@ -109,6 +112,7 @@ app.on('ready', function () {
     createWindow();
     tray = new Tray(path.join(__dirname, 'icon/logo.png'));
     tray.setTitle(AppTitle);
+    tray.setToolTip(AppTitle);
     tray.on("double-click", function () {
         mainWindow.show();
     });
@@ -154,6 +158,14 @@ app.on('activate', function () {
 ipcMain.on("hide-windows", function () {
     if (mainWindow != null) {
         mainWindow.hide();
+        if (firstHide && tray) {
+            tray.displayBalloon({
+                iconType: 'info',
+                title: "温馨提示",
+                content: "我隐藏到这里了哦，双击我显示主窗口！"
+            });
+            firstHide = false;
+        }
     }
 });
 ipcMain.on('get-all-videos', function (event, arg) {
@@ -192,15 +204,126 @@ ipcMain.on('task-add', function (event, arg) {
         //fs.writeFileSync('out.json', JSON.stringify(parser));
     });
 });
+var QueueObject = /** @class */ (function () {
+    function QueueObject() {
+        this.then = this["catch"] = null;
+    }
+    QueueObject.prototype.callback = function (_callback) {
+        return __awaiter(this, void 0, void 0, function () {
+            var partent_uri, segment, uri_ts, filename, filpath, _loop_1, this_1, index, state_1;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
+                        segment = this.segment;
+                        uri_ts = '';
+                        if (/^http.*/.test(segment.uri)) {
+                            uri_ts = segment.uri;
+                        }
+                        else {
+                            uri_ts = partent_uri + segment.uri;
+                        }
+                        filename = ((this.idx + 1) + '').padStart(6, '0') + ".ts";
+                        filpath = path.join(this.dir, filename);
+                        console.log("2 " + segment.uri, "" + filename);
+                        _loop_1 = function (index) {
+                            var that_1;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        if (!!fs.existsSync(filpath)) return [3 /*break*/, 2];
+                                        that_1 = this_1;
+                                        return [4 /*yield*/, download(uri_ts, that_1.dir, { filename: filename + ".dl" }).then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                                var key_uri;
+                                                return __generator(this, function (_a) {
+                                                    switch (_a.label) {
+                                                        case 0:
+                                                            if (!(segment.key != null && segment.key.method != null)) return [3 /*break*/, 2];
+                                                            key_uri = segment.key.uri;
+                                                            if (!/^http.*/.test(segment.key.uri)) {
+                                                                key_uri = partent_uri + segment.key.uri;
+                                                            }
+                                                            return [4 /*yield*/, download(key_uri, that_1.dir, { filename: "aes.key" }).then(function () {
+                                                                    var key_ = fs.readFileSync(path.join(that_1.dir, "aes.key"));
+                                                                    var iv_ = Buffer.from(segment.key.iv.buffer);
+                                                                    var cipher = crypto.createCipheriv((segment.key.method + "-cbc").toLowerCase(), key_, iv_);
+                                                                    var input = fs.createReadStream(path.join(that_1.dir, filename + ".dl"));
+                                                                    var output = fs.createWriteStream(path.join(that_1.dir, filename));
+                                                                    input.pipe(cipher).pipe(output);
+                                                                })["catch"](function (err_) {
+                                                                    console.error(err_);
+                                                                    console.log('download key error');
+                                                                })];
+                                                        case 1:
+                                                            _a.sent();
+                                                            fs.unlinkSync(filpath + ".dl");
+                                                            return [3 /*break*/, 3];
+                                                        case 2:
+                                                            fs.renameSync(filpath + ".dl", filpath);
+                                                            _a.label = 3;
+                                                        case 3: return [2 /*return*/];
+                                                    }
+                                                });
+                                            }); })["catch"](function () {
+                                                try {
+                                                    fs.unlinkSync(filpath + ".dl");
+                                                }
+                                                catch (derror) {
+                                                    console.log(derror);
+                                                }
+                                            })];
+                                    case 1:
+                                        _a.sent();
+                                        _a.label = 2;
+                                    case 2:
+                                        if (fs.existsSync(filpath)) {
+                                            return [2 /*return*/, "break"];
+                                        }
+                                        return [2 /*return*/];
+                                }
+                            });
+                        };
+                        this_1 = this;
+                        index = 0;
+                        _a.label = 1;
+                    case 1:
+                        if (!(index < 3)) return [3 /*break*/, 4];
+                        return [5 /*yield**/, _loop_1(index)];
+                    case 2:
+                        state_1 = _a.sent();
+                        if (state_1 === "break")
+                            return [3 /*break*/, 4];
+                        _a.label = 3;
+                    case 3:
+                        index++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        if (fs.existsSync(filpath)) {
+                            this.then && this.then();
+                        }
+                        else {
+                            this["catch"] && this["catch"]();
+                        }
+                        _callback();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    return QueueObject;
+}());
+function queue_callback(that, callback) {
+    that.callback(callback);
+}
 function startDownload(url, parser) {
-    var _this = this;
-    var partent_uri = url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
     var id = new Date().getTime();
     var dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), 'download/' + id);
     console.log(dir);
     var filesegments = [];
     fs.mkdirSync(dir, { recursive: true });
-    var q = new queue();
+    //并发 3 个线程下载
+    var tsQueues = async.queue(queue_callback, 3);
     var count_seg = parser.manifest.segments.length;
     var count_downloaded = 0;
     var video = {
@@ -214,93 +337,70 @@ function startDownload(url, parser) {
         videopath: ''
     };
     mainWindow.webContents.send('task-notify-create', video);
-    parser.manifest.segments.forEach(function (segment) {
-        console.log("1 " + segment.uri);
-        q.push(function (cb) { return __awaiter(_this, void 0, void 0, function () {
-            var uri_ts, filename, filpath, index;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        uri_ts = '';
-                        if (/^http.*/.test(segment.uri)) {
-                            uri_ts = segment.uri;
-                        }
-                        else {
-                            uri_ts = partent_uri + segment.uri;
-                        }
-                        console.log("2 " + segment.uri);
-                        filename = segment.uri.replace(/(^.*\/)|(\?.*$)/g, '');
-                        filpath = path.join(dir, filename);
-                        index = 0;
-                        _a.label = 1;
-                    case 1:
-                        if (!(index < 3)) return [3 /*break*/, 5];
-                        if (!!fs.existsSync(filpath)) return [3 /*break*/, 3];
-                        // 下载的时候使用.dl后缀的文件名，下载完成后重命名
-                        return [4 /*yield*/, download(uri_ts, dir, { filename: filename + ".dl" }).then(function () {
-                                fs.renameSync(filpath + ".dl", filpath);
-                            })["catch"](function () {
-                                try {
-                                    fs.unlinkSync(filpath + ".dl");
-                                }
-                                catch (derror) {
-                                    console.log(derror);
-                                }
-                            })];
-                    case 2:
-                        // 下载的时候使用.dl后缀的文件名，下载完成后重命名
-                        _a.sent();
-                        _a.label = 3;
-                    case 3:
-                        if (fs.existsSync(filpath)) {
-                            console.log("3 " + segment.uri);
-                            count_downloaded = count_downloaded + 1;
-                            video.segment_downloaded = count_downloaded;
-                            video.status = "\u4E0B\u8F7D\u4E2D..." + count_downloaded + "/" + count_seg;
-                            mainWindow.webContents.send('task-notify-update', video);
-                            return [3 /*break*/, 5];
-                        }
-                        _a.label = 4;
-                    case 4:
-                        index++;
-                        return [3 /*break*/, 1];
-                    case 5:
-                        cb(null, "success");
-                        return [2 /*return*/];
-                }
-            });
-        }); });
-    });
-    q.start(function () {
+    var segments = parser.manifest.segments;
+    for (var iSeg = 0; iSeg < segments.length; iSeg++) {
+        var qo = new QueueObject();
+        qo.dir = dir;
+        qo.idx = iSeg;
+        qo.url = url;
+        qo.segment = segments[iSeg];
+        qo.then = function () {
+            count_downloaded = count_downloaded + 1;
+            video.segment_downloaded = count_downloaded;
+            video.status = "\u4E0B\u8F7D\u4E2D..." + count_downloaded + "/" + count_seg;
+            mainWindow.webContents.send('task-notify-update', video);
+        };
+        tsQueues.push(qo);
+    }
+    tsQueues.drain(function () {
         console.log('download success');
         video.status = "已完成，合并中...";
         mainWindow.webContents.send('task-notify-end', video);
         var indexData = '';
-        parser.manifest.segments.forEach(function (segment) {
-            var filpath = path.join(dir, segment.uri.replace(/(^.*\/)|(\?.*$)/g, ''));
+        for (var iSeg = 0; iSeg < segments.length; iSeg++) {
+            var filpath = path.join(dir, ((iSeg + 1) + '').padStart(6, '0') + ".ts");
             indexData += "file '" + filpath + "'\r\n";
             filesegments.push(filpath);
-        });
+        }
         fs.writeFileSync(path.join(dir, 'index.txt'), indexData);
-        var p = spawn(path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg"), ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "" + path.join(dir, id + '.mp4')]);
-        p.on("close", function () {
-            video.videopath = path.join(dir, id + '.mp4');
-            video.status = "已完成";
-            mainWindow.webContents.send('task-notify-end', video);
-            if (isdelts) {
-                var index_path = path.join(dir, 'index.txt');
-                if (fs.existsSync(index_path)) {
-                    fs.unlinkSync(index_path);
-                }
-                filesegments.forEach(function (fileseg) {
-                    if (fs.existsSync(fileseg)) {
-                        fs.unlinkSync(fileseg);
+        var outPathMP4 = path.join(dir, id + '.mp4');
+        var ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg.exe");
+        if (!fs.existsSync(ffmpegBin)) {
+            ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg");
+        }
+        if (fs.existsSync(ffmpegBin)) {
+            var p = spawn(ffmpegBin, ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "" + outPathMP4]);
+            p.on("close", function () {
+                if (fs.existsSync(outPathMP4)) {
+                    video.videopath = outPathMP4;
+                    video.status = "已完成";
+                    mainWindow.webContents.send('task-notify-end', video);
+                    if (isdelts) {
+                        var index_path = path.join(dir, 'index.txt');
+                        if (fs.existsSync(index_path)) {
+                            fs.unlinkSync(index_path);
+                        }
+                        filesegments.forEach(function (fileseg) {
+                            if (fs.existsSync(fileseg)) {
+                                fs.unlinkSync(fileseg);
+                            }
+                        });
                     }
-                });
-            }
-            configVideos.push(video);
-            fs.writeFileSync("config.data", JSON.stringify(configVideos));
-        });
+                }
+                else {
+                    video.videopath = outPathMP4;
+                    video.status = "合成失败，可能是非标准加密视频源，暂不支持。";
+                    mainWindow.webContents.send('task-notify-end', video);
+                }
+                configVideos.push(video);
+                fs.writeFileSync("config.data", JSON.stringify(configVideos));
+            });
+        }
+        else {
+            video.videopath = outPathMP4;
+            video.status = "已完成，未发现本地FFMPEG，不进行合成。";
+            mainWindow.webContents.send('task-notify-end', video);
+        }
     });
 }
 function formatTime(duration) {

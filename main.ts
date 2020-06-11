@@ -1,5 +1,6 @@
 import { resolve } from "dns";
 import { rejects } from "assert";
+import { httpSend } from "./HTTPPlus";
 
 const { app, BrowserWindow, Tray, ipcMain, shell,Menu } = require('electron');
 const { spawn } = require('child_process');
@@ -7,15 +8,18 @@ const path = require('path');
 const { Parser } = require('m3u8-parser');
 const HTTPPlus = require('./HTTPPlus');
 const fs = require('fs');
-const queue = require('queue');
+var async = require('async');
 const dateFormat = require('dateformat');
 const download = require('download');
+var AES = require("crypto-js/aes");
+const crypto = require('crypto');
 
 let isdelts = true;
 let mainWindow = null;
 let playerWindow = null;
 let tray = null;
 let AppTitle = 'HLS Downloader'
+let firstHide = true;
 
 var configVideos = [];
 
@@ -83,6 +87,7 @@ app.on('ready', () => {
 	createWindow();
 	tray = new Tray(path.join(__dirname, 'icon/logo.png'))
 	tray.setTitle(AppTitle);
+	tray.setToolTip(AppTitle);
 	tray.on("double-click",()=>{
 		mainWindow.show();
 	});
@@ -132,6 +137,16 @@ app.on('activate', () => {
 ipcMain.on("hide-windows",function(){
 	if (mainWindow != null) {
 		mainWindow.hide();
+
+		if(firstHide && tray)
+		{
+			tray.displayBalloon({
+				iconType :'info',
+				title :"温馨提示",
+				content :"我隐藏到这里了哦，双击我显示主窗口！"
+			})
+			firstHide = false;
+		}
 	}
 });
 
@@ -177,17 +192,104 @@ ipcMain.on('task-add', function (event, arg:string) {
 
 });
 
+class QueueObject {
+	constructor() {
+		this.then = this.catch = null;
+	}
+	public segment: any;
+	public url: string;
+	public idx: number;
+	public dir: string;
+	public then: Function;
+	public catch: Function;
+	public async callback( _callback: Function ) {
+		let partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
+		let segment = this.segment;
+		let uri_ts = '';
+		if (/^http.*/.test(segment.uri)) {
+			uri_ts = segment.uri;
+		}
+		else {
+			uri_ts = partent_uri + segment.uri;
+		}
+		let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
+		let filpath = path.join(this.dir, filename);
 
+		console.log(`2 ${segment.uri}`,`${filename}`);
+		//检测文件是否存在
+		for (let index = 0; index < 3; index++) {
+			if(!fs.existsSync(filpath))
+			{
+				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
+				let that = this;
+				await download (uri_ts, that.dir, {filename: filename + ".dl"}).then(async ()=>{
+
+					//标准解密TS流
+					if(segment.key != null && segment.key.method != null)
+					{
+						let key_uri = segment.key.uri;
+						if (! /^http.*/.test(segment.key.uri)) {
+							key_uri = partent_uri + segment.key.uri;
+						}
+						await download (key_uri, that.dir, {filename: "aes.key"}).then(()=>{
+							let key_ = fs.readFileSync( path.join( that.dir,"aes.key" ) );
+							let iv_ = Buffer.from(segment.key.iv.buffer);
+							const cipher = crypto.createCipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
+							const input = fs.createReadStream(path.join(that.dir,filename + ".dl"));
+							const output = fs.createWriteStream(path.join(that.dir,filename));
+							input.pipe(cipher).pipe(output);
+						})
+						.catch((err_)=>{
+							console.error(err_);
+							console.log('download key error');
+						});
+						fs.unlinkSync(filpath+".dl");
+					}
+					else
+					{
+						fs.renameSync(filpath+".dl",filpath);
+					}
+				}).catch(()=>{
+					try {
+						fs.unlinkSync(filpath+".dl");
+					} catch (derror) {
+						console.log(derror);
+					}
+				});
+			}
+			if(fs.existsSync(filpath))
+			{
+				break;
+			}
+		}
+		if(fs.existsSync(filpath))
+		{
+			this.then && this.then();
+		}
+		else
+		{
+			this.catch && this.catch();
+		}
+		_callback();
+	}
+}
+
+function queue_callback(that:QueueObject,callback:Function)
+{
+	that.callback(callback);
+}
 
 function startDownload(url:string, parser:any) {
-	let partent_uri = url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
 	let id = new Date().getTime();
 
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
 	console.log(dir);
 	let filesegments = [];
 	fs.mkdirSync(dir, { recursive: true });
-	var q = new queue();
+
+	//并发 3 个线程下载
+	var tsQueues = async.queue(queue_callback, 3 );
+
 	let count_seg = parser.manifest.segments.length;
 	let count_downloaded = 0;
 	var video = {
@@ -201,93 +303,80 @@ function startDownload(url:string, parser:any) {
 		videopath:''
 	};
 	mainWindow.webContents.send('task-notify-create',video);
-	parser.manifest.segments.forEach(segment => {
-		console.log(`1 ${segment.uri}`);
-		q.push(async (cb) => {
-			let uri_ts = '';
-			if (/^http.*/.test(segment.uri)) {
-				uri_ts = segment.uri;
-			}
-			else {
-				uri_ts = partent_uri + segment.uri;
-			}
-			console.log(`2 ${segment.uri}`);
-			let filename = segment.uri.replace(/(^.*\/)|(\?.*$)/g, '');
-			let filpath = path.join(dir, filename);
-			//检测文件是否存在
-			for (let index = 0; index < 3; index++) {
-				if(!fs.existsSync(filpath))
-				{
-					// 下载的时候使用.dl后缀的文件名，下载完成后重命名
-					await download (uri_ts, dir, {filename: filename + ".dl"}).then(()=>{
-						fs.renameSync(filpath+".dl",filpath);
-					}).catch(()=>{
-						try {
-							fs.unlinkSync(filpath+".dl");
-						} catch (derror) {
-							console.log(derror);
-						}
-					});
-				}
-				if(fs.existsSync(filpath))
-				{
-					console.log(`3 ${segment.uri}`);
-					count_downloaded = count_downloaded + 1
-					video.segment_downloaded = count_downloaded;
-					video.status = `下载中...${count_downloaded}/${count_seg}`
-					mainWindow.webContents.send('task-notify-update',video);
-					break;
-				}
-			}
-			cb(null,"success");
-			/*
-			HTTPPlus.downloadFileSync(uri_ts, filpath, 'GET', null, null, (res_data,error) => {
-				console.log(`3 ${segment.uri}`);
-				count_downloaded = count_downloaded + 1
-				video.segment_downloaded = count_downloaded;
-				video.status = `下载中...${count_downloaded}/${count_seg}`
-				mainWindow.webContents.send('task-notify-update',video);
 
-				cb(error,res_data);
-			});*/
-		});
-	});
-	q.start(()=>{
+	let segments = parser.manifest.segments;
+	for (let iSeg = 0; iSeg < segments.length; iSeg++) {
+		let qo = new QueueObject();
+		qo.dir = dir;
+		qo.idx = iSeg;
+		qo.url = url;
+		qo.segment = segments[iSeg];
+		qo.then = function(){
+			count_downloaded = count_downloaded + 1
+			video.segment_downloaded = count_downloaded;
+			video.status = `下载中...${count_downloaded}/${count_seg}`
+			mainWindow.webContents.send('task-notify-update',video);
+		};
+		tsQueues.push(qo);
+	}
+	tsQueues.drain(()=>{
 		console.log('download success');
 		video.status = "已完成，合并中..."
 		mainWindow.webContents.send('task-notify-end',video);
 		let indexData = '';
-		parser.manifest.segments.forEach(segment => {
-			let filpath = path.join(dir, segment.uri.replace(/(^.*\/)|(\?.*$)/g, ''));
+		
+		for (let iSeg = 0; iSeg < segments.length; iSeg++) {
+			let filpath = path.join(dir, `${ ((iSeg + 1) +'').padStart(6,'0') }.ts`);
 			indexData += `file '${filpath}'\r\n`;
 			filesegments.push(filpath);
-		});
+		}
 		fs.writeFileSync(path.join(dir,'index.txt'),indexData);
-
-		var p = spawn(path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg"),["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy",`${path.join(dir,id+'.mp4')}`]);
-		p.on("close",()=>{
-			video.videopath = path.join(dir,id+'.mp4');
-			video.status = "已完成"
-			mainWindow.webContents.send('task-notify-end',video);
-
-			if(isdelts)
-			{
-				let index_path = path.join(dir,'index.txt');
-				if(fs.existsSync(index_path))
+		let outPathMP4 = path.join(dir,id+'.mp4');
+		let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
+		if(!fs.existsSync(ffmpegBin))
+		{
+			ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
+		}
+		if(fs.existsSync(ffmpegBin))
+		{
+			var p = spawn(ffmpegBin,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy",`${outPathMP4}`]);
+			p.on("close",()=>{
+				if(fs.existsSync(outPathMP4))
 				{
-					fs.unlinkSync(index_path);
-				}
-				filesegments.forEach(fileseg=>{
-					if(fs.existsSync(fileseg))
-					{
-						fs.unlinkSync(fileseg);
-					}
-				});
-			}
+					video.videopath = outPathMP4;
+					video.status = "已完成"
+					mainWindow.webContents.send('task-notify-end',video);
 
-			configVideos.push(video);
-			fs.writeFileSync("config.data",JSON.stringify(configVideos));
-		});
+					if(isdelts)
+					{
+						let index_path = path.join(dir,'index.txt');
+						if(fs.existsSync(index_path))
+						{
+							fs.unlinkSync(index_path);
+						}
+						filesegments.forEach(fileseg=>{
+							if(fs.existsSync(fileseg))
+							{
+								fs.unlinkSync(fileseg);
+							}
+						});
+					}
+				}
+				else
+				{
+					video.videopath = outPathMP4;
+					video.status = "合成失败，可能是非标准加密视频源，暂不支持。"
+					mainWindow.webContents.send('task-notify-end',video);
+				}
+				configVideos.push(video);
+				fs.writeFileSync("config.data",JSON.stringify(configVideos));
+			});
+		}
+		else{
+			video.videopath = outPathMP4;
+			video.status = "已完成，未发现本地FFMPEG，不进行合成。"
+			mainWindow.webContents.send('task-notify-end',video);
+		}
 	});
 }
 

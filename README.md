@@ -1,5 +1,7 @@
 # M3U8-Downloader
-HLS Downloader，一个Electron App，可以下载、播放HLS视频流
+HLS Downloader，一个Electron App，可以下载、播放HLS视频流。
+
+![HLSDownload Show](https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow.gif?raw=true)
 
 # 官网
 [M3U8-Downloader 官网](https://tools.heisir.cn/HLSDownload)

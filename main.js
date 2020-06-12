@@ -332,7 +332,7 @@ function startDownload(url, parser) {
         dir: dir,
         segment_total: count_seg,
         segment_downloaded: count_downloaded,
-        time: dateFormat(new Date(), "yyyy-MM-dd HH:mm:ss"),
+        time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
         status: '初始化...',
         videopath: ''
     };

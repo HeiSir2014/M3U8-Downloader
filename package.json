@@ -16,13 +16,14 @@
     "url": "^0.11.0"
   },
   "devDependencies": {
-    "electron": "^5.0.6"
+    "electron": "^9.0.3"
   },
   "scripts": {
     "complie": "tsc main.ts",
+    "copyffmpeg": "xcopy /D /E /I /F /Y .\\ffmpeg.exe ..\\dist\\m3u8-downloader-win32-x64",
     "start": "electron .",
     "start2": "npm run complie && electron .",
-    "package": "npm run complie && electron-packager . m3u8-downloader --asar --platform=win32 --arch=x64 --ignore=^/.git -unpack=ffmpeg.exe --icon=.\\icon\\logo.ico --out ../dist --electron-version=9.0.3 --overwrite "
+    "package": "npm run complie && electron-packager . m3u8-downloader --asar --platform=win32 --arch=x64 --ignore=^/.git -unpack=ffmpeg.exe --icon=.\\icon\\logo.ico --out ../dist --electron-version=9.0.3 --overwrite && npm run copyffmpeg"
   },
   "author": "heisir qq:1586462",
   "license": "ISC"

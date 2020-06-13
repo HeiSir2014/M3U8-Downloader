@@ -44,7 +44,6 @@ var fs = require('fs');
 var async = require('async');
 var dateFormat = require('dateformat');
 var download = require('download');
-var AES = require("crypto-js/aes");
 var crypto = require('crypto');
 var isdelts = true;
 var mainWindow = null;
@@ -210,8 +209,7 @@ var QueueObject = /** @class */ (function () {
     }
     QueueObject.prototype.callback = function (_callback) {
         return __awaiter(this, void 0, void 0, function () {
-            var partent_uri, segment, uri_ts, filename, filpath, _loop_1, this_1, index, state_1;
-            var _this = this;
+            var partent_uri, segment, uri_ts, filename, filpath, filpath_dl, index, that, stat, aes_path, key_uri, key_, iv_, cipher, inputData, outputData;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -226,79 +224,73 @@ var QueueObject = /** @class */ (function () {
                         }
                         filename = ((this.idx + 1) + '').padStart(6, '0') + ".ts";
                         filpath = path.join(this.dir, filename);
+                        filpath_dl = path.join(this.dir, filename + ".dl");
                         console.log("2 " + segment.uri, "" + filename);
-                        _loop_1 = function (index) {
-                            var that_1;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!!fs.existsSync(filpath)) return [3 /*break*/, 2];
-                                        that_1 = this_1;
-                                        return [4 /*yield*/, download(uri_ts, that_1.dir, { filename: filename + ".dl" }).then(function () { return __awaiter(_this, void 0, void 0, function () {
-                                                var key_uri;
-                                                return __generator(this, function (_a) {
-                                                    switch (_a.label) {
-                                                        case 0:
-                                                            if (!(segment.key != null && segment.key.method != null)) return [3 /*break*/, 2];
-                                                            key_uri = segment.key.uri;
-                                                            if (!/^http.*/.test(segment.key.uri)) {
-                                                                key_uri = partent_uri + segment.key.uri;
-                                                            }
-                                                            return [4 /*yield*/, download(key_uri, that_1.dir, { filename: "aes.key" }).then(function () {
-                                                                    var key_ = fs.readFileSync(path.join(that_1.dir, "aes.key"));
-                                                                    var iv_ = Buffer.from(segment.key.iv.buffer);
-                                                                    var cipher = crypto.createCipheriv((segment.key.method + "-cbc").toLowerCase(), key_, iv_);
-                                                                    var input = fs.createReadStream(path.join(that_1.dir, filename + ".dl"));
-                                                                    var output = fs.createWriteStream(path.join(that_1.dir, filename));
-                                                                    input.pipe(cipher).pipe(output);
-                                                                })["catch"](function (err_) {
-                                                                    console.error(err_);
-                                                                    console.log('download key error');
-                                                                })];
-                                                        case 1:
-                                                            _a.sent();
-                                                            fs.unlinkSync(filpath + ".dl");
-                                                            return [3 /*break*/, 3];
-                                                        case 2:
-                                                            fs.renameSync(filpath + ".dl", filpath);
-                                                            _a.label = 3;
-                                                        case 3: return [2 /*return*/];
-                                                    }
-                                                });
-                                            }); })["catch"](function () {
-                                                try {
-                                                    fs.unlinkSync(filpath + ".dl");
-                                                }
-                                                catch (derror) {
-                                                    console.log(derror);
-                                                }
-                                            })];
-                                    case 1:
-                                        _a.sent();
-                                        _a.label = 2;
-                                    case 2:
-                                        if (fs.existsSync(filpath)) {
-                                            return [2 /*return*/, "break"];
-                                        }
-                                        return [2 /*return*/];
-                                }
-                            });
-                        };
-                        this_1 = this;
                         index = 0;
                         _a.label = 1;
                     case 1:
-                        if (!(index < 3)) return [3 /*break*/, 4];
-                        return [5 /*yield**/, _loop_1(index)];
+                        if (!(index < 3)) return [3 /*break*/, 10];
+                        if (!!fs.existsSync(filpath)) return [3 /*break*/, 8];
+                        that = this;
+                        return [4 /*yield*/, download(uri_ts, that.dir, { filename: filename + ".dl" })["catch"](function (err) {
+                                console.log(err);
+                                if (fs.existsSync(filpath_dl))
+                                    fs.unlinkSync(filpath_dl);
+                            })];
                     case 2:
-                        state_1 = _a.sent();
-                        if (state_1 === "break")
-                            return [3 /*break*/, 4];
-                        _a.label = 3;
+                        _a.sent();
+                        if (!fs.existsSync(filpath_dl)) return [3 /*break*/, 8];
+                        stat = fs.statSync(filpath_dl);
+                        if (!(stat.size > 0)) return [3 /*break*/, 7];
+                        if (!(segment.key != null && segment.key.method != null)) return [3 /*break*/, 5];
+                        aes_path = path.join(this.dir, "aes.key");
+                        if (!!fs.existsSync(aes_path)) return [3 /*break*/, 4];
+                        key_uri = segment.key.uri;
+                        if (!/^http.*/.test(segment.key.uri)) {
+                            key_uri = partent_uri + segment.key.uri;
+                        }
+                        return [4 /*yield*/, download(key_uri, that.dir, { filename: "aes.key" })["catch"](console.error)];
                     case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4:
+                        if (fs.existsSync(aes_path)) {
+                            try {
+                                key_ = fs.readFileSync(aes_path);
+                                iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
+                                    : Buffer.from(that.idx.toString(16).padStart(32, '0'), 'hex');
+                                cipher = crypto.createDecipheriv((segment.key.method + "-cbc").toLowerCase(), key_, iv_);
+                                cipher.on('error', console.error);
+                                inputData = fs.readFileSync(filpath_dl);
+                                outputData = Buffer.concat([cipher.update(inputData), cipher.final()]);
+                                fs.writeFileSync(filpath, outputData);
+                                fs.unlinkSync(filpath_dl);
+                                that.then && that.then();
+                                _callback();
+                                return [2 /*return*/];
+                            }
+                            catch (error) {
+                                console.error(error);
+                                fs.unlinkSync(filpath_dl);
+                            }
+                        }
+                        return [3 /*break*/, 6];
+                    case 5:
+                        fs.renameSync(filpath_dl, filpath);
+                        _a.label = 6;
+                    case 6: return [3 /*break*/, 8];
+                    case 7:
+                        fs.unlinkSync(filpath_dl);
+                        _a.label = 8;
+                    case 8:
+                        if (fs.existsSync(filpath)) {
+                            return [3 /*break*/, 10];
+                        }
+                        _a.label = 9;
+                    case 9:
                         index++;
                         return [3 /*break*/, 1];
-                    case 4:
+                    case 10:
                         if (fs.existsSync(filpath)) {
                             this.then && this.then();
                         }
@@ -322,8 +314,8 @@ function startDownload(url, parser) {
     console.log(dir);
     var filesegments = [];
     fs.mkdirSync(dir, { recursive: true });
-    //并发 3 个线程下载
-    var tsQueues = async.queue(queue_callback, 3);
+    //并发 6 个线程下载
+    var tsQueues = async.queue(queue_callback, 6);
     var count_seg = parser.manifest.segments.length;
     var count_downloaded = 0;
     var video = {

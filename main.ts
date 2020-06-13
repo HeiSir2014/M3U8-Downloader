@@ -11,7 +11,6 @@ const fs = require('fs');
 var async = require('async');
 const dateFormat = require('dateformat');
 const download = require('download');
-var AES = require("crypto-js/aes");
 const crypto = require('crypto');
 
 let isdelts = true;
@@ -113,7 +112,9 @@ app.on('ready', () => {
         configVideos = JSON.parse(fs.readFileSync("config.data"));
     } catch (error) {
         
-    }
+	}
+	
+	
 });
 
 // 当全部窗口关闭时退出。
@@ -214,6 +215,7 @@ class QueueObject {
 		}
 		let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
 		let filpath = path.join(this.dir, filename);
+		let filpath_dl = path.join(this.dir, filename+".dl");
 
 		console.log(`2 ${segment.uri}`,`${filename}`);
 		//检测文件是否存在
@@ -222,40 +224,59 @@ class QueueObject {
 			{
 				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
 				let that = this;
-				await download (uri_ts, that.dir, {filename: filename + ".dl"}).then(async ()=>{
-
-					//标准解密TS流
-					if(segment.key != null && segment.key.method != null)
-					{
-						let key_uri = segment.key.uri;
-						if (! /^http.*/.test(segment.key.uri)) {
-							key_uri = partent_uri + segment.key.uri;
-						}
-						await download (key_uri, that.dir, {filename: "aes.key"}).then(()=>{
-							let key_ = fs.readFileSync( path.join( that.dir,"aes.key" ) );
-							let iv_ = Buffer.from(segment.key.iv.buffer);
-							const cipher = crypto.createCipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
-							const input = fs.createReadStream(path.join(that.dir,filename + ".dl"));
-							const output = fs.createWriteStream(path.join(that.dir,filename));
-							input.pipe(cipher).pipe(output);
-						})
-						.catch((err_)=>{
-							console.error(err_);
-							console.log('download key error');
-						});
-						fs.unlinkSync(filpath+".dl");
-					}
-					else
-					{
-						fs.renameSync(filpath+".dl",filpath);
-					}
-				}).catch(()=>{
-					try {
-						fs.unlinkSync(filpath+".dl");
-					} catch (derror) {
-						console.log(derror);
-					}
+				await download (uri_ts, that.dir, {filename: filename + ".dl"}).catch((err)=>{
+					console.log(err);
+					if(fs.existsSync(filpath_dl))
+							fs.unlinkSync( filpath_dl);
 				});
+				if( fs.existsSync(filpath_dl) )
+				{
+					let stat = fs.statSync(filpath_dl);
+					if(stat.size > 0)
+					{
+						//标准解密TS流
+						if(segment.key != null && segment.key.method != null)
+						{
+							let aes_path = path.join(this.dir, "aes.key" );
+							if(!fs.existsSync(aes_path))
+							{
+								let key_uri = segment.key.uri;
+								if (! /^http.*/.test(segment.key.uri)) {
+									key_uri = partent_uri + segment.key.uri;
+								}
+								await download (key_uri, that.dir, { filename: "aes.key" }).catch(console.error);
+							}
+							if(fs.existsSync(aes_path ))
+							{
+								try {
+									let key_ = fs.readFileSync( aes_path );
+									let iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
+									:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
+									let cipher = crypto.createDecipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
+									cipher.on('error', console.error);
+									let inputData = fs.readFileSync( filpath_dl );
+									let outputData =Buffer.concat([cipher.update(inputData),cipher.final()]);
+									fs.writeFileSync(filpath,outputData);
+									
+									fs.unlinkSync(filpath_dl);
+									that.then && that.then();
+									_callback();
+									return;
+								} catch (error) {
+									console.error(error);
+									fs.unlinkSync(filpath_dl);
+								}
+							}
+						}
+						else
+						{
+							fs.renameSync(filpath_dl,filpath);
+						}
+					}
+					else{
+						fs.unlinkSync(filpath_dl);
+					}
+				}
 			}
 			if(fs.existsSync(filpath))
 			{
@@ -287,8 +308,8 @@ function startDownload(url:string, parser:any) {
 	let filesegments = [];
 	fs.mkdirSync(dir, { recursive: true });
 
-	//并发 3 个线程下载
-	var tsQueues = async.queue(queue_callback, 3 );
+	//并发 6 个线程下载
+	var tsQueues = async.queue(queue_callback, 6 );
 
 	let count_seg = parser.manifest.segments.length;
 	let count_downloaded = 0;

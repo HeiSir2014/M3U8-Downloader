@@ -1,6 +1,6 @@
 {
   "name": "m3u8-downloader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "hls 下载器，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -24,7 +24,7 @@
     "copyffmpeg": "xcopy /D /E /I /F /Y .\\ffmpeg.exe ..\\dist\\m3u8-downloader-win32-x64",
     "start": "electron .",
     "start2": "npm run complie && electron .",
-    "package": "npm run complie && electron-packager . m3u8-downloader --asar --platform=win32 --arch=x64 --ignore=^/.git --ignore=^/download --ignore=^/config.data -unpack=ffmpeg.exe --icon=.\\icon\\logo.ico --out ../dist --electron-version=9.0.3 --overwrite && npm run copyffmpeg"
+    "package": "npm run complie && electron-packager . m3u8-downloader --asar --platform=win32 --arch=x64 -unpack=ffmpeg.exe --icon=.\\icon\\logo.ico --out ../dist --electron-version=9.0.3 --overwrite && npm run copyffmpeg"
   },
   "author": "heisir qq:1586462",
   "license": "ISC"

@@ -209,7 +209,7 @@ var QueueObject = /** @class */ (function () {
     }
     QueueObject.prototype.callback = function (_callback) {
         return __awaiter(this, void 0, void 0, function () {
-            var partent_uri, segment, uri_ts, filename, filpath, filpath_dl, index, that, stat, aes_path, key_uri, key_, iv_, cipher, inputData, outputData;
+            var partent_uri, segment, uri_ts, mes, filename, filpath, filpath_dl, index, that, stat, aes_path, key_uri, key_, iv_, cipher, inputData, outputData;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -218,6 +218,15 @@ var QueueObject = /** @class */ (function () {
                         uri_ts = '';
                         if (/^http.*/.test(segment.uri)) {
                             uri_ts = segment.uri;
+                        }
+                        else if (/^\/.*/.test(segment.uri)) {
+                            mes = this.url.match(/^https?:\/\/[^/]*/);
+                            if (mes && mes.length >= 1) {
+                                uri_ts = mes[0] + segment.uri;
+                            }
+                            else {
+                                uri_ts = partent_uri + segment.uri;
+                            }
                         }
                         else {
                             uri_ts = partent_uri + segment.uri;
@@ -232,7 +241,7 @@ var QueueObject = /** @class */ (function () {
                         if (!(index < 3)) return [3 /*break*/, 10];
                         if (!!fs.existsSync(filpath)) return [3 /*break*/, 8];
                         that = this;
-                        return [4 /*yield*/, download(uri_ts, that.dir, { filename: filename + ".dl" })["catch"](function (err) {
+                        return [4 /*yield*/, download(uri_ts, that.dir, { filename: filename + ".dl", timeout: 30000 })["catch"](function (err) {
                                 console.log(err);
                                 if (fs.existsSync(filpath_dl))
                                     fs.unlinkSync(filpath_dl);
@@ -361,7 +370,7 @@ function startDownload(url, parser) {
             ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg");
         }
         if (fs.existsSync(ffmpegBin)) {
-            var p = spawn(ffmpegBin, ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "" + outPathMP4]);
+            var p = spawn(ffmpegBin, ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "-f", "mp4", "" + outPathMP4]);
             p.on("close", function () {
                 if (fs.existsSync(outPathMP4)) {
                     video.videopath = outPathMP4;
@@ -387,6 +396,7 @@ function startDownload(url, parser) {
                 configVideos.push(video);
                 fs.writeFileSync("config.data", JSON.stringify(configVideos));
             });
+            p.on("data", console.log);
         }
         else {
             video.videopath = outPathMP4;

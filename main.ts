@@ -210,7 +210,20 @@ class QueueObject {
 		if (/^http.*/.test(segment.uri)) {
 			uri_ts = segment.uri;
 		}
-		else {
+		else if(/^\/.*/.test(segment.uri))
+		{
+			let mes = this.url.match(/^https?:\/\/[^/]*/);
+			if(mes && mes.length >= 1)
+			{
+				uri_ts = mes[0] + segment.uri;
+			}
+			else
+			{
+				uri_ts = partent_uri + segment.uri;
+			}
+		}
+		else
+		{
 			uri_ts = partent_uri + segment.uri;
 		}
 		let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
@@ -224,7 +237,7 @@ class QueueObject {
 			{
 				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
 				let that = this;
-				await download (uri_ts, that.dir, {filename: filename + ".dl"}).catch((err)=>{
+				await download (uri_ts, that.dir, {filename: filename + ".dl",timeout:30000}).catch((err)=>{
 					console.log(err);
 					if(fs.existsSync(filpath_dl))
 							fs.unlinkSync( filpath_dl);
@@ -259,6 +272,7 @@ class QueueObject {
 									fs.writeFileSync(filpath,outputData);
 									
 									fs.unlinkSync(filpath_dl);
+									
 									that.then && that.then();
 									_callback();
 									return;
@@ -360,7 +374,7 @@ function startDownload(url:string, parser:any) {
 		}
 		if(fs.existsSync(ffmpegBin))
 		{
-			var p = spawn(ffmpegBin,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy",`${outPathMP4}`]);
+			var p = spawn(ffmpegBin,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy","-f","mp4",`${outPathMP4}`]);
 			p.on("close",()=>{
 				if(fs.existsSync(outPathMP4))
 				{
@@ -392,6 +406,7 @@ function startDownload(url:string, parser:any) {
 				configVideos.push(video);
 				fs.writeFileSync("config.data",JSON.stringify(configVideos));
 			});
+			p.on("data",console.log);
 		}
 		else{
 			video.videopath = outPathMP4;

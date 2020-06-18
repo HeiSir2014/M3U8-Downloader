@@ -53,19 +53,29 @@ function addVideo(data)
     newItem.querySelector('.link input').value = data.url;
     newItem.querySelector('.time .value').innerHTML = data.time;
     newItem.querySelector('.status .value').innerHTML = data.status;
-    newItem.querySelector('.opendir').setAttribute('dir',data.dir);
-    newItem.querySelector('.opendir').onclick = opendir;
+    newItem.querySelector('.opendir').setAttribute('opt', "opendir");
+    newItem.querySelector('.opendir').setAttribute('data',data.dir);
+    newItem.querySelector('.opendir').onclick = click_callback;
+    newItem.querySelector('.del').setAttribute('opt','delvideo');
     newItem.querySelector('.del').setAttribute('data',data.id);
-    newItem.querySelector('.del').onclick = delvideo;
+    newItem.querySelector('.del').onclick = click_callback;
+    
+    newItem.querySelector('.StartStop').setAttribute('opt','StartOrStop');
+    newItem.querySelector('.StartStop').setAttribute('data',data.id);
+    newItem.querySelector('.StartStop').onclick = click_callback;
+
+    
+    newItem.querySelector('.play').setAttribute('opt','playvideo');
+    newItem.querySelector('.play').onclick = click_callback;
+
     if(data.status != "已完成")
     {
         newItem.querySelector('.del').style.display='none';
         newItem.querySelector('.play').style.display='none';
     }
     else
-    {
-        newItem.querySelector('.play').setAttribute('videopath',data.videopath);
-        newItem.querySelector('.play').onclick = playvideo;
+    {   
+        newItem.querySelector('.play').setAttribute('data',data.videopath);
     }
 
     taskList.insertBefore(newItem,null);
@@ -82,10 +92,9 @@ ipcRenderer.on('task-notify-update',function(event,data){
 
 ipcRenderer.on('task-notify-end',function(event,data){
     var newItem = document.querySelector('#_'+data.id);
-    
-    newItem.querySelector('.play').setAttribute('videopath',data.videopath);
+
+    newItem.querySelector('.play').setAttribute('data',data.videopath);
     newItem.querySelector('.status .value').innerHTML = data.status;
-    newItem.querySelector('.play').onclick = playvideo;
     newItem.querySelector('.del').style.display='';
     newItem.querySelector('.play').style.display='';
 });
@@ -106,27 +115,16 @@ ipcRenderer.on('delvideo-reply',function(event,data){
 
 document.body.onload = function(){
     ipcRenderer.send('get-all-videos');
-    return;
-    var TaskList = document.querySelector('.TaskList');
-    var TaskItem = document.querySelector('.TaskList .item');
-    for (let index = 0; index < 10; index++) {
-
-        TaskList.innerHTML = TaskList.innerHTML +TaskItem.outerHTML;
-    }
 };
 
-function opendir(dir)
+function click_callback()
 {
-    ipcRenderer.send('opendir',this.getAttribute('dir'));
-}
-
-function delvideo()
-{
-    ipcRenderer.send('delvideo',this.getAttribute('data'));
-}
-function playvideo()
-{
-    ipcRenderer.send('playvideo',this.getAttribute('videopath'));
+    var opt = this.getAttribute('opt');
+    if(opt == "StartOrStop")
+    {
+        this.value = this.value == "停止"?"重新开始":"停止";
+    }
+    ipcRenderer.send(this.getAttribute('opt'),this.getAttribute('data'));
 }
 
 function setting_isdelts(){

@@ -1,6 +1,6 @@
 {
   "name": "m3u8-downloader",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "hls 下载器，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -9,6 +9,7 @@
     "dateformat": "^3.0.3",
     "download": "^8.0.0",
     "fluent-ffmpeg": "^2.1.2",
+    "got": "^11.3.0",
     "http": "0.0.0",
     "https": "^1.0.0",
     "m3u8-parser": "^4.4.0",

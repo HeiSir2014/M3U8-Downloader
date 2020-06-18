@@ -147,7 +147,8 @@ html{
 .heisir .main .TaskList{
     width: 85%;
     height: calc(100% - 160px);
-    margin: 40px auto;
+    margin: 15px auto;
+    padding: 10px;
     overflow-y: auto;
     padding: 0px;
     border-radius: 28px;

@@ -1,17 +1,18 @@
 import { resolve } from "dns";
 import { rejects } from "assert";
-import { httpSend } from "./HTTPPlus";
 
 const { app, BrowserWindow, Tray, ipcMain, shell,Menu } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const { Parser } = require('m3u8-parser');
-const HTTPPlus = require('./HTTPPlus');
 const fs = require('fs');
 var async = require('async');
 const dateFormat = require('dateformat');
 const download = require('download');
 const crypto = require('crypto');
+const got = require('got');
+const { Readable} = require('stream');
+const ffmpeg = require('fluent-ffmpeg');
 
 let isdelts = true;
 let mainWindow = null;
@@ -21,6 +22,7 @@ let AppTitle = 'HLS Downloader'
 let firstHide = true;
 
 var configVideos = [];
+let globalCond ={};
 
 function createWindow() {
 	// 创建浏览器窗口
@@ -156,19 +158,21 @@ ipcMain.on('get-all-videos', function (event, arg) {
     event.sender.send('get-all-videos-reply', configVideos);
 });
 
-ipcMain.on('task-add', function (event, arg:string) {
+ipcMain.on('task-add', async function (event, arg:string) {
 	console.log(arg);
 	let hlsSrc = arg;
 
-	HTTPPlus.httpSend(hlsSrc, 'GET', null, null, function (data, error) {
+	const response = await got(hlsSrc).catch(console.log);
+	{
 		let info = '';
 		let code = 0;
 		code = -1;
 		info = '解析资源失败！';
-		if (data != null
-			&& data != '') {
+		if (response && response.body != null
+			&& response.body != '')
+		{
 			let parser = new Parser();
-			parser.push(data);
+			parser.push(response.body);
 			parser.end();
 			let count_seg = parser.manifest.segments.length;
 			if (count_seg > 0) {
@@ -179,18 +183,16 @@ ipcMain.on('task-add', function (event, arg:string) {
 						duration += segment.duration;
 					});
 					info = `点播资源解析成功，有 ${count_seg} 个片段，时长：${formatTime(duration)}，即将开始缓存...`;
+					startDownload(hlsSrc);
 				}
 				else {
 					info = `直播资源解析成功，即将开始缓存...`;
+					startDownloadLive(hlsSrc);
 				}
-				startDownload(hlsSrc, parser);
 			}
 		}
 		event.sender.send('task-add-reply', { code: code, message: info });
-
-		//fs.writeFileSync('out.json', JSON.stringify(parser));
-	});
-
+	}
 });
 
 class QueueObject {
@@ -199,11 +201,19 @@ class QueueObject {
 	}
 	public segment: any;
 	public url: string;
+	public id: number;
 	public idx: number;
 	public dir: string;
 	public then: Function;
 	public catch: Function;
 	public async callback( _callback: Function ) {
+
+		if(!globalCond[this.id])
+		{
+			_callback();
+			return;
+		}
+
 		let partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
 		let segment = this.segment;
 		let uri_ts = '';
@@ -314,13 +324,26 @@ function queue_callback(that:QueueObject,callback:Function)
 	that.callback(callback);
 }
 
-function startDownload(url:string, parser:any) {
-	let id = new Date().getTime();
+async function startDownload(url:string, nId:number = null) {
+	let id = nId == null ? new Date().getTime():nId;
 
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
 	console.log(dir);
 	let filesegments = [];
-	fs.mkdirSync(dir, { recursive: true });
+
+	if(!fs.existsSync(dir))
+	{
+		fs.mkdirSync(dir, { recursive: true });
+	}
+
+	const response = await got(url).catch(console.log);
+	if(response == null || response.body == null || response.body == '')
+	{
+		return;
+	}
+	let parser = new Parser();
+	parser.push(response.body);
+	parser.end();
 
 	//并发 6 个线程下载
 	var tsQueues = async.queue(queue_callback, 6 );
@@ -335,15 +358,20 @@ function startDownload(url:string, parser:any) {
 		segment_downloaded:count_downloaded,
 		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
 		status:'初始化...',
+		isLiving:false,
 		videopath:''
 	};
-	mainWindow.webContents.send('task-notify-create',video);
+	if(nId == null)
+	{
+		mainWindow.webContents.send('task-notify-create',video);
+	}
 
 	let segments = parser.manifest.segments;
 	for (let iSeg = 0; iSeg < segments.length; iSeg++) {
 		let qo = new QueueObject();
 		qo.dir = dir;
 		qo.idx = iSeg;
+		qo.id = id;
 		qo.url = url;
 		qo.segment = segments[iSeg];
 		qo.then = function(){
@@ -414,7 +442,235 @@ function startDownload(url:string, parser:any) {
 			mainWindow.webContents.send('task-notify-end',video);
 		}
 	});
+	console.log("drain over");
 }
+
+function sleep(ms:number) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+class FFmpegStreamReadable extends Readable {
+	constructor(opt:any) {
+	  super(opt);
+	}
+	_read() {}
+}
+
+async function startDownloadLive(url:string,nId:number = null) {
+	let id = nId == null ? new Date().getTime() : nId;
+
+	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
+	console.log(dir);
+	if(!fs.existsSync(dir))
+	{
+		fs.mkdirSync(dir, { recursive: true });
+	}
+
+	let count_downloaded = 0;
+	let count_seg = 100;
+	var video = {
+		id:id,
+		url:url,
+		dir:dir,
+		segment_total:count_seg,
+		segment_downloaded:count_downloaded,
+		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
+		status:'初始化...',
+		isLiving:true,
+		videopath:''
+	};
+	
+	configVideos.push(video);
+	fs.writeFileSync("config.data",JSON.stringify(configVideos));
+
+	if(nId == null)
+	{
+		mainWindow.webContents.send('task-notify-create',video);
+	}
+
+	let partent_uri = url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
+	let segmentSet = new Set();
+	let ffmpegInputStream = null;
+	let ffmpegObj = null;
+	globalCond[id] = true;
+	while (globalCond[id]) {
+
+		try {
+			const response = await got(url).catch(console.log);
+			if(response == null || response.body == null || response.body == '')
+			{
+				break;
+			}
+			let parser = new Parser();
+			parser.push(response.body);
+			parser.end();
+			
+			let count_seg = parser.manifest.segments.length;
+			let segments = parser.manifest.segments;
+			console.log(`解析到 ${count_seg} 片段`)
+			if (count_seg > 0) {
+				let find = false;
+				//开始下载片段的时间，下载完毕后，需要计算下次请求的时间
+				let _startTime = new Date();
+				let _videoDuration = 0;
+				for (let iSeg = 0; iSeg < segments.length; iSeg++) {
+					let segment = segments[iSeg];
+					if(find == false && segmentSet.has(segment.uri))
+					{
+						continue;
+					}
+					else if(find == false)
+					{
+						find = true;
+					}
+					if(!globalCond[id])
+					{
+						break;
+					}
+					segmentSet.add(segment.uri);
+					_videoDuration = _videoDuration + segment.duration*1000;
+					let uri_ts = '';
+					if (/^http.*/.test(segment.uri)) {
+						uri_ts = segment.uri;
+					}
+					else if(/^\/.*/.test(segment.uri))
+					{
+						let mes = url.match(/^https?:\/\/[^/]*/);
+						if(mes && mes.length >= 1)
+						{
+							uri_ts = mes[0] + segment.uri;
+						}
+						else
+						{
+							uri_ts = partent_uri + segment.uri;
+						}
+					}
+					else
+					{
+						uri_ts = partent_uri + segment.uri;
+					}
+					
+					let filename = `${ ((count_downloaded + 1) +'').padStart(6,'0') }.ts`;
+					let filpath = path.join(dir, filename);
+					let filpath_dl = path.join(dir, filename+".dl");
+
+					for (let index = 0; index < 3; index++) {
+						if(!globalCond[id])
+						{
+							break;
+						}
+						await download (uri_ts, dir, { filename: filename + ".dl", timeout:30000 }).catch((err:any)=>{
+							console.log(err);
+							if(fs.existsSync( filpath_dl ))
+							{
+								fs.unlinkSync( filpath_dl );
+							}
+						});
+						if( fs.existsSync(filpath_dl) )
+						{
+							let stat = fs.statSync(filpath_dl);
+							if(stat.size > 0)
+							{
+								fs.renameSync(filpath_dl,filpath);
+							}
+							else
+							{
+								fs.unlinkSync( filpath_dl);
+							}
+						}
+						if( fs.existsSync(filpath) )
+						{
+							if(ffmpegObj == null)
+							{
+								let outPathMP4 = path.join(dir,id+'.mp4');
+								let newid = id;
+								//不要覆盖之前下载的直播内容
+								while(fs.existsSync(outPathMP4))
+								{
+									outPathMP4  = path.join(dir,newid+'.mp4');
+									newid = newid + 1;
+								}
+								let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
+								if(!fs.existsSync(ffmpegBin))
+								{
+									ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
+								}
+								if(fs.existsSync(ffmpegBin))
+								{
+									ffmpegInputStream = new FFmpegStreamReadable(null);
+
+									ffmpegObj = new ffmpeg(ffmpegInputStream)
+									.setFfmpegPath(ffmpegBin)
+									.videoCodec('copy')
+									.audioCodec('copy')
+									.save(outPathMP4)
+									.on('error', console.log)
+									.on('end', function(){
+										video.videopath = outPathMP4;
+										video.status = "已完成";
+										mainWindow.webContents.send('task-notify-end',video);
+										fs.writeFileSync("config.data",JSON.stringify(configVideos));
+									})
+									.on('progress', console.log);
+								}
+								else{
+									video.videopath = outPathMP4;
+									video.status = "已完成，未发现本地FFMPEG，不进行合成。"
+									mainWindow.webContents.send('task-notify-update',video);
+								}
+							}
+
+							if(ffmpegInputStream)
+							{
+								ffmpegInputStream.push(fs.readFileSync(filpath));
+								fs.unlinkSync( filpath );
+							}
+
+							//fs.appendFileSync(path.join(dir,'index.txt'),`file '${filpath}'\r\n`);
+							count_downloaded = count_downloaded + 1;
+							video.segment_downloaded = count_downloaded;
+							video.status = `直播中... [${count_downloaded}]`;
+							mainWindow.webContents.send('task-notify-update',video);
+							break;
+						}
+					}
+				}
+				if(globalCond[id])
+				{
+					//使下次下载M3U8时间提前1秒钟。
+					_videoDuration = _videoDuration - 1000;
+					let _downloadTime = (new Date().getTime() - _startTime.getTime());
+					if(_downloadTime < _videoDuration)
+					{
+						await sleep(_videoDuration - _downloadTime);
+					}
+				}
+			}
+			else
+			{
+				break;
+			}
+			parser = null;
+		}
+		catch (error)
+		{
+			console.log(error.response.body);
+		}
+	}
+	if(ffmpegInputStream)
+	{
+		ffmpegInputStream.push(null);
+	}
+
+	if(count_downloaded <= 0)
+	{
+		video.videopath = '';
+		video.status = "已完成，下载失败"
+		mainWindow.webContents.send('task-notify-end',video);
+		return;
+	}
+}
+
 
 function formatTime(duration: number) {
 	let sec = Math.floor(duration % 60).toLocaleString();
@@ -459,6 +715,33 @@ ipcMain.on('opendir', function (event, arg:string) {
 
 ipcMain.on('playvideo', function (event, arg:string) {
 	createPlayerWindow(arg);
+});
+ipcMain.on('StartOrStop', function (event, arg:string) {
+	console.log(arg);
+	
+	let id = Number.parseInt(arg);
+	if(globalCond[id] == null)
+	{
+		console.log("不存在此任务")
+		return;
+	}
+	globalCond[id] = !globalCond[ id];
+	if(globalCond[ id] == true)
+	{
+		configVideos.forEach(Element=>{
+			if(Element.id==id)
+			{
+				if(Element.isLiving == true)
+				{
+					startDownloadLive(Element.url, id);
+				}
+				else
+				{
+					startDownload(Element.url, id);
+				}
+			}
+		});
+	}
 });
 
 ipcMain.on('setting_isdelts', function (event, arg:boolean) {

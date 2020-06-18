@@ -1,4 +1,17 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -39,12 +52,14 @@ var _a = require('electron'), app = _a.app, BrowserWindow = _a.BrowserWindow, Tr
 var spawn = require('child_process').spawn;
 var path = require('path');
 var Parser = require('m3u8-parser').Parser;
-var HTTPPlus = require('./HTTPPlus');
 var fs = require('fs');
 var async = require('async');
 var dateFormat = require('dateformat');
 var download = require('download');
 var crypto = require('crypto');
+var got = require('got');
+var Readable = require('stream').Readable;
+var ffmpeg = require('fluent-ffmpeg');
 var isdelts = true;
 var mainWindow = null;
 var playerWindow = null;
@@ -52,6 +67,7 @@ var tray = null;
 var AppTitle = 'HLS Downloader';
 var firstHide = true;
 var configVideos = [];
+var globalCond = {};
 function createWindow() {
     // 创建浏览器窗口
     mainWindow = new BrowserWindow({
@@ -171,36 +187,48 @@ ipcMain.on('get-all-videos', function (event, arg) {
     event.sender.send('get-all-videos-reply', configVideos);
 });
 ipcMain.on('task-add', function (event, arg) {
-    console.log(arg);
-    var hlsSrc = arg;
-    HTTPPlus.httpSend(hlsSrc, 'GET', null, null, function (data, error) {
-        var info = '';
-        var code = 0;
-        code = -1;
-        info = '解析资源失败！';
-        if (data != null
-            && data != '') {
-            var parser = new Parser();
-            parser.push(data);
-            parser.end();
-            var count_seg = parser.manifest.segments.length;
-            if (count_seg > 0) {
-                code = 0;
-                if (parser.manifest.endList) {
-                    var duration_1 = 0;
-                    parser.manifest.segments.forEach(function (segment) {
-                        duration_1 += segment.duration;
-                    });
-                    info = "\u70B9\u64AD\u8D44\u6E90\u89E3\u6790\u6210\u529F\uFF0C\u6709 " + count_seg + " \u4E2A\u7247\u6BB5\uFF0C\u65F6\u957F\uFF1A" + formatTime(duration_1) + "\uFF0C\u5373\u5C06\u5F00\u59CB\u7F13\u5B58...";
-                }
-                else {
-                    info = "\u76F4\u64AD\u8D44\u6E90\u89E3\u6790\u6210\u529F\uFF0C\u5373\u5C06\u5F00\u59CB\u7F13\u5B58...";
-                }
-                startDownload(hlsSrc, parser);
+    return __awaiter(this, void 0, void 0, function () {
+        var hlsSrc, response, info, code, parser, count_seg, duration_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log(arg);
+                    hlsSrc = arg;
+                    return [4 /*yield*/, got(hlsSrc)["catch"](console.log)];
+                case 1:
+                    response = _a.sent();
+                    {
+                        info = '';
+                        code = 0;
+                        code = -1;
+                        info = '解析资源失败！';
+                        if (response && response.body != null
+                            && response.body != '') {
+                            parser = new Parser();
+                            parser.push(response.body);
+                            parser.end();
+                            count_seg = parser.manifest.segments.length;
+                            if (count_seg > 0) {
+                                code = 0;
+                                if (parser.manifest.endList) {
+                                    duration_1 = 0;
+                                    parser.manifest.segments.forEach(function (segment) {
+                                        duration_1 += segment.duration;
+                                    });
+                                    info = "\u70B9\u64AD\u8D44\u6E90\u89E3\u6790\u6210\u529F\uFF0C\u6709 " + count_seg + " \u4E2A\u7247\u6BB5\uFF0C\u65F6\u957F\uFF1A" + formatTime(duration_1) + "\uFF0C\u5373\u5C06\u5F00\u59CB\u7F13\u5B58...";
+                                    startDownload(hlsSrc);
+                                }
+                                else {
+                                    info = "\u76F4\u64AD\u8D44\u6E90\u89E3\u6790\u6210\u529F\uFF0C\u5373\u5C06\u5F00\u59CB\u7F13\u5B58...";
+                                    startDownloadLive(hlsSrc);
+                                }
+                            }
+                        }
+                        event.sender.send('task-add-reply', { code: code, message: info });
+                    }
+                    return [2 /*return*/];
             }
-        }
-        event.sender.send('task-add-reply', { code: code, message: info });
-        //fs.writeFileSync('out.json', JSON.stringify(parser));
+        });
     });
 });
 var QueueObject = /** @class */ (function () {
@@ -213,6 +241,10 @@ var QueueObject = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        if (!globalCond[this.id]) {
+                            _callback();
+                            return [2 /*return*/];
+                        }
                         partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
                         segment = this.segment;
                         uri_ts = '';
@@ -317,92 +349,362 @@ var QueueObject = /** @class */ (function () {
 function queue_callback(that, callback) {
     that.callback(callback);
 }
-function startDownload(url, parser) {
-    var id = new Date().getTime();
-    var dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), 'download/' + id);
-    console.log(dir);
-    var filesegments = [];
-    fs.mkdirSync(dir, { recursive: true });
-    //并发 6 个线程下载
-    var tsQueues = async.queue(queue_callback, 6);
-    var count_seg = parser.manifest.segments.length;
-    var count_downloaded = 0;
-    var video = {
-        id: id,
-        url: url,
-        dir: dir,
-        segment_total: count_seg,
-        segment_downloaded: count_downloaded,
-        time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
-        status: '初始化...',
-        videopath: ''
-    };
-    mainWindow.webContents.send('task-notify-create', video);
-    var segments = parser.manifest.segments;
-    for (var iSeg = 0; iSeg < segments.length; iSeg++) {
-        var qo = new QueueObject();
-        qo.dir = dir;
-        qo.idx = iSeg;
-        qo.url = url;
-        qo.segment = segments[iSeg];
-        qo.then = function () {
-            count_downloaded = count_downloaded + 1;
-            video.segment_downloaded = count_downloaded;
-            video.status = "\u4E0B\u8F7D\u4E2D..." + count_downloaded + "/" + count_seg;
-            mainWindow.webContents.send('task-notify-update', video);
-        };
-        tsQueues.push(qo);
-    }
-    tsQueues.drain(function () {
-        console.log('download success');
-        video.status = "已完成，合并中...";
-        mainWindow.webContents.send('task-notify-end', video);
-        var indexData = '';
-        for (var iSeg = 0; iSeg < segments.length; iSeg++) {
-            var filpath = path.join(dir, ((iSeg + 1) + '').padStart(6, '0') + ".ts");
-            indexData += "file '" + filpath + "'\r\n";
-            filesegments.push(filpath);
-        }
-        fs.writeFileSync(path.join(dir, 'index.txt'), indexData);
-        var outPathMP4 = path.join(dir, id + '.mp4');
-        var ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg.exe");
-        if (!fs.existsSync(ffmpegBin)) {
-            ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg");
-        }
-        if (fs.existsSync(ffmpegBin)) {
-            var p = spawn(ffmpegBin, ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "-f", "mp4", "" + outPathMP4]);
-            p.on("close", function () {
-                if (fs.existsSync(outPathMP4)) {
-                    video.videopath = outPathMP4;
-                    video.status = "已完成";
-                    mainWindow.webContents.send('task-notify-end', video);
-                    if (isdelts) {
-                        var index_path = path.join(dir, 'index.txt');
-                        if (fs.existsSync(index_path)) {
-                            fs.unlinkSync(index_path);
+function startDownload(url, nId) {
+    if (nId === void 0) { nId = null; }
+    return __awaiter(this, void 0, void 0, function () {
+        var id, dir, filesegments, response, parser, tsQueues, count_seg, count_downloaded, video, segments, iSeg, qo;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    id = nId == null ? new Date().getTime() : nId;
+                    dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), 'download/' + id);
+                    console.log(dir);
+                    filesegments = [];
+                    if (!fs.existsSync(dir)) {
+                        fs.mkdirSync(dir, { recursive: true });
+                    }
+                    return [4 /*yield*/, got(url)["catch"](console.log)];
+                case 1:
+                    response = _a.sent();
+                    if (response == null || response.body == null || response.body == '') {
+                        return [2 /*return*/];
+                    }
+                    parser = new Parser();
+                    parser.push(response.body);
+                    parser.end();
+                    tsQueues = async.queue(queue_callback, 6);
+                    count_seg = parser.manifest.segments.length;
+                    count_downloaded = 0;
+                    video = {
+                        id: id,
+                        url: url,
+                        dir: dir,
+                        segment_total: count_seg,
+                        segment_downloaded: count_downloaded,
+                        time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+                        status: '初始化...',
+                        isLiving: false,
+                        videopath: ''
+                    };
+                    if (nId == null) {
+                        mainWindow.webContents.send('task-notify-create', video);
+                    }
+                    segments = parser.manifest.segments;
+                    for (iSeg = 0; iSeg < segments.length; iSeg++) {
+                        qo = new QueueObject();
+                        qo.dir = dir;
+                        qo.idx = iSeg;
+                        qo.id = id;
+                        qo.url = url;
+                        qo.segment = segments[iSeg];
+                        qo.then = function () {
+                            count_downloaded = count_downloaded + 1;
+                            video.segment_downloaded = count_downloaded;
+                            video.status = "\u4E0B\u8F7D\u4E2D..." + count_downloaded + "/" + count_seg;
+                            mainWindow.webContents.send('task-notify-update', video);
+                        };
+                        tsQueues.push(qo);
+                    }
+                    tsQueues.drain(function () {
+                        console.log('download success');
+                        video.status = "已完成，合并中...";
+                        mainWindow.webContents.send('task-notify-end', video);
+                        var indexData = '';
+                        for (var iSeg = 0; iSeg < segments.length; iSeg++) {
+                            var filpath = path.join(dir, ((iSeg + 1) + '').padStart(6, '0') + ".ts");
+                            indexData += "file '" + filpath + "'\r\n";
+                            filesegments.push(filpath);
                         }
-                        filesegments.forEach(function (fileseg) {
-                            if (fs.existsSync(fileseg)) {
-                                fs.unlinkSync(fileseg);
+                        fs.writeFileSync(path.join(dir, 'index.txt'), indexData);
+                        var outPathMP4 = path.join(dir, id + '.mp4');
+                        var ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg.exe");
+                        if (!fs.existsSync(ffmpegBin)) {
+                            ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg");
+                        }
+                        if (fs.existsSync(ffmpegBin)) {
+                            var p = spawn(ffmpegBin, ["-f", "concat", "-safe", "0", "-i", "" + path.join(dir, 'index.txt'), "-c", "copy", "-f", "mp4", "" + outPathMP4]);
+                            p.on("close", function () {
+                                if (fs.existsSync(outPathMP4)) {
+                                    video.videopath = outPathMP4;
+                                    video.status = "已完成";
+                                    mainWindow.webContents.send('task-notify-end', video);
+                                    if (isdelts) {
+                                        var index_path = path.join(dir, 'index.txt');
+                                        if (fs.existsSync(index_path)) {
+                                            fs.unlinkSync(index_path);
+                                        }
+                                        filesegments.forEach(function (fileseg) {
+                                            if (fs.existsSync(fileseg)) {
+                                                fs.unlinkSync(fileseg);
+                                            }
+                                        });
+                                    }
+                                }
+                                else {
+                                    video.videopath = outPathMP4;
+                                    video.status = "合成失败，可能是非标准加密视频源，暂不支持。";
+                                    mainWindow.webContents.send('task-notify-end', video);
+                                }
+                                configVideos.push(video);
+                                fs.writeFileSync("config.data", JSON.stringify(configVideos));
+                            });
+                            p.on("data", console.log);
+                        }
+                        else {
+                            video.videopath = outPathMP4;
+                            video.status = "已完成，未发现本地FFMPEG，不进行合成。";
+                            mainWindow.webContents.send('task-notify-end', video);
+                        }
+                    });
+                    console.log("drain over");
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function sleep(ms) {
+    return new Promise(function (resolve) { return setTimeout(resolve, ms); });
+}
+var FFmpegStreamReadable = /** @class */ (function (_super) {
+    __extends(FFmpegStreamReadable, _super);
+    function FFmpegStreamReadable(opt) {
+        return _super.call(this, opt) || this;
+    }
+    FFmpegStreamReadable.prototype._read = function () { };
+    return FFmpegStreamReadable;
+}(Readable));
+function startDownloadLive(url, nId) {
+    if (nId === void 0) { nId = null; }
+    return __awaiter(this, void 0, void 0, function () {
+        var id, dir, count_downloaded, count_seg, video, partent_uri, segmentSet, ffmpegInputStream, ffmpegObj, response, parser, count_seg_1, segments, find, _startTime, _videoDuration, _loop_1, iSeg, state_1, _downloadTime, error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    id = nId == null ? new Date().getTime() : nId;
+                    dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), 'download/' + id);
+                    console.log(dir);
+                    if (!fs.existsSync(dir)) {
+                        fs.mkdirSync(dir, { recursive: true });
+                    }
+                    count_downloaded = 0;
+                    count_seg = 100;
+                    video = {
+                        id: id,
+                        url: url,
+                        dir: dir,
+                        segment_total: count_seg,
+                        segment_downloaded: count_downloaded,
+                        time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+                        status: '初始化...',
+                        isLiving: true,
+                        videopath: ''
+                    };
+                    configVideos.push(video);
+                    fs.writeFileSync("config.data", JSON.stringify(configVideos));
+                    if (nId == null) {
+                        mainWindow.webContents.send('task-notify-create', video);
+                    }
+                    partent_uri = url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
+                    segmentSet = new Set();
+                    ffmpegInputStream = null;
+                    ffmpegObj = null;
+                    globalCond[id] = true;
+                    _a.label = 1;
+                case 1:
+                    if (!globalCond[id]) return [3 /*break*/, 14];
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 12, , 13]);
+                    return [4 /*yield*/, got(url)["catch"](console.log)];
+                case 3:
+                    response = _a.sent();
+                    if (response == null || response.body == null || response.body == '') {
+                        return [3 /*break*/, 14];
+                    }
+                    parser = new Parser();
+                    parser.push(response.body);
+                    parser.end();
+                    count_seg_1 = parser.manifest.segments.length;
+                    segments = parser.manifest.segments;
+                    console.log("\u89E3\u6790\u5230 " + count_seg_1 + " \u7247\u6BB5");
+                    if (!(count_seg_1 > 0)) return [3 /*break*/, 10];
+                    find = false;
+                    _startTime = new Date();
+                    _videoDuration = 0;
+                    _loop_1 = function (iSeg) {
+                        var segment, uri_ts, mes, filename, filpath, filpath_dl, _loop_2, index, state_2;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    segment = segments[iSeg];
+                                    if (find == false && segmentSet.has(segment.uri)) {
+                                        return [2 /*return*/, "continue"];
+                                    }
+                                    else if (find == false) {
+                                        find = true;
+                                    }
+                                    if (!globalCond[id]) {
+                                        return [2 /*return*/, "break"];
+                                    }
+                                    segmentSet.add(segment.uri);
+                                    _videoDuration = _videoDuration + segment.duration * 1000;
+                                    uri_ts = '';
+                                    if (/^http.*/.test(segment.uri)) {
+                                        uri_ts = segment.uri;
+                                    }
+                                    else if (/^\/.*/.test(segment.uri)) {
+                                        mes = url.match(/^https?:\/\/[^/]*/);
+                                        if (mes && mes.length >= 1) {
+                                            uri_ts = mes[0] + segment.uri;
+                                        }
+                                        else {
+                                            uri_ts = partent_uri + segment.uri;
+                                        }
+                                    }
+                                    else {
+                                        uri_ts = partent_uri + segment.uri;
+                                    }
+                                    filename = ((count_downloaded + 1) + '').padStart(6, '0') + ".ts";
+                                    filpath = path.join(dir, filename);
+                                    filpath_dl = path.join(dir, filename + ".dl");
+                                    _loop_2 = function (index) {
+                                        var stat, outPathMP4_1, newid, ffmpegBin;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0:
+                                                    if (!globalCond[id]) {
+                                                        return [2 /*return*/, "break"];
+                                                    }
+                                                    return [4 /*yield*/, download(uri_ts, dir, { filename: filename + ".dl", timeout: 30000 })["catch"](function (err) {
+                                                            console.log(err);
+                                                            if (fs.existsSync(filpath_dl)) {
+                                                                fs.unlinkSync(filpath_dl);
+                                                            }
+                                                        })];
+                                                case 1:
+                                                    _a.sent();
+                                                    if (fs.existsSync(filpath_dl)) {
+                                                        stat = fs.statSync(filpath_dl);
+                                                        if (stat.size > 0) {
+                                                            fs.renameSync(filpath_dl, filpath);
+                                                        }
+                                                        else {
+                                                            fs.unlinkSync(filpath_dl);
+                                                        }
+                                                    }
+                                                    if (fs.existsSync(filpath)) {
+                                                        if (ffmpegObj == null) {
+                                                            outPathMP4_1 = path.join(dir, id + '.mp4');
+                                                            newid = id;
+                                                            //不要覆盖之前下载的直播内容
+                                                            while (fs.existsSync(outPathMP4_1)) {
+                                                                outPathMP4_1 = path.join(dir, newid + '.mp4');
+                                                                newid = newid + 1;
+                                                            }
+                                                            ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg.exe");
+                                                            if (!fs.existsSync(ffmpegBin)) {
+                                                                ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g, ""), "ffmpeg");
+                                                            }
+                                                            if (fs.existsSync(ffmpegBin)) {
+                                                                ffmpegInputStream = new FFmpegStreamReadable(null);
+                                                                ffmpegObj = new ffmpeg(ffmpegInputStream)
+                                                                    .setFfmpegPath(ffmpegBin)
+                                                                    .videoCodec('copy')
+                                                                    .audioCodec('copy')
+                                                                    .save(outPathMP4_1)
+                                                                    .on('error', console.log)
+                                                                    .on('end', function () {
+                                                                    video.videopath = outPathMP4_1;
+                                                                    video.status = "已完成";
+                                                                    mainWindow.webContents.send('task-notify-end', video);
+                                                                    fs.writeFileSync("config.data", JSON.stringify(configVideos));
+                                                                })
+                                                                    .on('progress', console.log);
+                                                            }
+                                                            else {
+                                                                video.videopath = outPathMP4_1;
+                                                                video.status = "已完成，未发现本地FFMPEG，不进行合成。";
+                                                                mainWindow.webContents.send('task-notify-update', video);
+                                                            }
+                                                        }
+                                                        if (ffmpegInputStream) {
+                                                            ffmpegInputStream.push(fs.readFileSync(filpath));
+                                                            fs.unlinkSync(filpath);
+                                                        }
+                                                        //fs.appendFileSync(path.join(dir,'index.txt'),`file '${filpath}'\r\n`);
+                                                        count_downloaded = count_downloaded + 1;
+                                                        video.segment_downloaded = count_downloaded;
+                                                        video.status = "\u76F4\u64AD\u4E2D... [" + count_downloaded + "]";
+                                                        mainWindow.webContents.send('task-notify-update', video);
+                                                        return [2 /*return*/, "break"];
+                                                    }
+                                                    return [2 /*return*/];
+                                            }
+                                        });
+                                    };
+                                    index = 0;
+                                    _a.label = 1;
+                                case 1:
+                                    if (!(index < 3)) return [3 /*break*/, 4];
+                                    return [5 /*yield**/, _loop_2(index)];
+                                case 2:
+                                    state_2 = _a.sent();
+                                    if (state_2 === "break")
+                                        return [3 /*break*/, 4];
+                                    _a.label = 3;
+                                case 3:
+                                    index++;
+                                    return [3 /*break*/, 1];
+                                case 4: return [2 /*return*/];
                             }
                         });
+                    };
+                    iSeg = 0;
+                    _a.label = 4;
+                case 4:
+                    if (!(iSeg < segments.length)) return [3 /*break*/, 7];
+                    return [5 /*yield**/, _loop_1(iSeg)];
+                case 5:
+                    state_1 = _a.sent();
+                    if (state_1 === "break")
+                        return [3 /*break*/, 7];
+                    _a.label = 6;
+                case 6:
+                    iSeg++;
+                    return [3 /*break*/, 4];
+                case 7:
+                    if (!globalCond[id]) return [3 /*break*/, 9];
+                    //使下次下载M3U8时间提前1秒钟。
+                    _videoDuration = _videoDuration - 1000;
+                    _downloadTime = (new Date().getTime() - _startTime.getTime());
+                    if (!(_downloadTime < _videoDuration)) return [3 /*break*/, 9];
+                    return [4 /*yield*/, sleep(_videoDuration - _downloadTime)];
+                case 8:
+                    _a.sent();
+                    _a.label = 9;
+                case 9: return [3 /*break*/, 11];
+                case 10: return [3 /*break*/, 14];
+                case 11:
+                    parser = null;
+                    return [3 /*break*/, 13];
+                case 12:
+                    error_1 = _a.sent();
+                    console.log(error_1.response.body);
+                    return [3 /*break*/, 13];
+                case 13: return [3 /*break*/, 1];
+                case 14:
+                    if (ffmpegInputStream) {
+                        ffmpegInputStream.push(null);
                     }
-                }
-                else {
-                    video.videopath = outPathMP4;
-                    video.status = "合成失败，可能是非标准加密视频源，暂不支持。";
-                    mainWindow.webContents.send('task-notify-end', video);
-                }
-                configVideos.push(video);
-                fs.writeFileSync("config.data", JSON.stringify(configVideos));
-            });
-            p.on("data", console.log);
-        }
-        else {
-            video.videopath = outPathMP4;
-            video.status = "已完成，未发现本地FFMPEG，不进行合成。";
-            mainWindow.webContents.send('task-notify-end', video);
-        }
+                    if (count_downloaded <= 0) {
+                        video.videopath = '';
+                        video.status = "已完成，下载失败";
+                        mainWindow.webContents.send('task-notify-end', video);
+                        return [2 /*return*/];
+                    }
+                    return [2 /*return*/];
+            }
+        });
     });
 }
 function formatTime(duration) {
@@ -446,6 +748,27 @@ ipcMain.on('opendir', function (event, arg) {
 });
 ipcMain.on('playvideo', function (event, arg) {
     createPlayerWindow(arg);
+});
+ipcMain.on('StartOrStop', function (event, arg) {
+    console.log(arg);
+    var id = Number.parseInt(arg);
+    if (globalCond[id] == null) {
+        console.log("不存在此任务");
+        return;
+    }
+    globalCond[id] = !globalCond[id];
+    if (globalCond[id] == true) {
+        configVideos.forEach(function (Element) {
+            if (Element.id == id) {
+                if (Element.isLiving == true) {
+                    startDownloadLive(Element.url, id);
+                }
+                else {
+                    startDownload(Element.url, id);
+                }
+            }
+        });
+    }
 });
 ipcMain.on('setting_isdelts', function (event, arg) {
     isdelts = arg;

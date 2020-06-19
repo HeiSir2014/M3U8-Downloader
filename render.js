@@ -15,15 +15,22 @@ aqqgroup.onclick = ahome.onclick = function(e){
 }
 
 var input_url = document.querySelector('.heisir .main .addTask input[type=text]');
-var btnAddTask = document.querySelector('.heisir .main .addTask input[type=button]');
+var btnAddTask = document.querySelector('.heisir .main .addTask .download');
+var btnHeaders = document.querySelector('.heisir .main .addTask .httpHeader');
 var info = document.querySelector('.heisir .main .addTask .info');
 var info = document.querySelector('.heisir .main .addTask .info');
 
 btnAddTask.onclick = function(){
     if(input_url.value != '')
     {
-        ipcRenderer.send('task-add',input_url.value);
+        var content = document.querySelector('.heisir .main .addTask .headers .content');
+        ipcRenderer.send('task-add',input_url.value,content.value);
     }
+}
+
+btnHeaders.onclick = function(){
+    var headers = document.querySelector('.heisir .main .addTask .headers');
+    headers.style.display = headers.style.display == 'none'?'':'none';
 }
 
 ipcRenderer.on('get-all-videos-reply',function(event,data){

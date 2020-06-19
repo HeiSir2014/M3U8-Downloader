@@ -3,7 +3,20 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const { Readable} = require('stream');
 const path = require('path');
+const got = require('got');
 
+
+
+(async () => {
+    const { body } = await got('http://v.ytsjk.cn/38df87dc4b70456aa2eadde6e713fa38/6a2a090b523d4c9491277a41bb6a2567-dcb98c29eb2d3f032c85e7a6cf2c5b83-sd.m3u8',{headers:{
+        'Origin':'http://www.ytsjk.cn',
+        'Referer':'http://www.ytsjk.cn',
+    }});
+    console.log(body);
+})();
+
+
+/*
 
 const dir = 'E:\\Project\\my_project\\M3U8-Downloader\\source\\download\\1592447619950\\';
 let inputStream = new Readable();
@@ -38,3 +51,4 @@ fs.readdir(dir,function(err,files){
     inputStream.push(null);
 });
 
+*/

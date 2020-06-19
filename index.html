@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="heisir">
-    <div class="header"><span class="title">M3U8-Downloader v1.0.5</span>
+    <div class="header"><span class="title">M3U8-Downloader v1.0.6</span>
         <div class="space"></div>
         <a class="home" href="https://tools.heisir.cn/HLSDownload/" target="_blank">官网</a>
         <a class="qqgroup" href="https://jq.qq.com/?_wv=1027&k=nhFrZBS0">点击加群</a>
@@ -16,9 +16,17 @@
     </div>
     <div class="main">
         <div class="addTask">
+            <input class=httpHeader type="button" value="自定义头">
             <input type="text" placeholder="请输入m3u8地址">
-            <input type="button" value="下载">
+            <input class=download type="button" value="下载">
             <label><input class="setting_isdelts" type="checkbox" onclick="setting_isdelts()" checked />删除TS文件</label>
+            
+            <div class="headers" style="display: none;">
+                <textarea class="content" placeholder="//一行一个Header，例如：
+Origin: http://www.ytsjk.cn
+Referer: http://www.ytsjk.cn/
+"></textarea>
+            </div>
             <div class="info"></div>
         </div>
         <div class="TaskList">
@@ -44,5 +52,15 @@
         </div>
     </div>
     <script src="render.js"></script>
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+          var hm = document.createElement("script");
+          hm.src = "https://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3";
+          var s = document.getElementsByTagName("script")[0]; 
+          s.parentNode.insertBefore(hm, s);
+        })();
+        </script>
+        
 </body>
 </html>

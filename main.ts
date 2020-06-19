@@ -51,7 +51,7 @@ function createWindow() {
 
 	})
 
-	//mainWindow.webContents.openDevTools();
+	mainWindow.webContents.openDevTools();
 }
 function createPlayerWindow(src:string) {
 	if(playerWindow == null)
@@ -116,11 +116,42 @@ app.on('ready', () => {
         
 	}
 	
+	//百度统计代码
+	(async ()=>{
+
+		try {
+			let HMACCOUNT = '';
+			if(fs.existsSync('tongji.ini'))
+			{
+				HMACCOUNT = fs.readFileSync('tongji.ini',{encoding:"utf-8",flag:"r"})
+			}
+			const {headers} = await got("http://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3",{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
+			try {
+				HMACCOUNT = headers['set-cookie'][0].match(/HMACCOUNT=(.*?);/i)[1];
+				fs.writeFileSync('tongji.ini',HMACCOUNT,{encoding:"utf-8",flag:"w"})
+			} catch (error_) {
+				
+			}
+			console.log(HMACCOUNT);
+			await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime()/1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=https%3A%2F%2Ftools.heisir.cn%2FM3U8Soft-Client%2F`,{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
+			await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
+		} catch (error) {
+			
+		}
 	
+	})();
 });
 
 // 当全部窗口关闭时退出。
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+
+	let HMACCOUNT = '';
+	if(fs.existsSync('tongji.ini'))
+	{
+		HMACCOUNT = fs.readFileSync('tongji.ini',{encoding:"utf-8",flag:"r"});
+		await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
+	}
+
 	// 在 macOS 上，除非用户用 Cmd + Q 确定地退出，
 	// 否则绝大部分应用及其菜单栏会保持激活。
 	if (process.platform !== 'darwin') {
@@ -158,11 +189,36 @@ ipcMain.on('get-all-videos', function (event, arg) {
     event.sender.send('get-all-videos-reply', configVideos);
 });
 
-ipcMain.on('task-add', async function (event, arg:string) {
+ipcMain.on('task-add', async function (event, arg:string, headers:string) {
 	console.log(arg);
 	let hlsSrc = arg;
+	let _headers = {};
+	if(headers != '')
+	{
+		let __ = headers.match(/([^ ]*?): ?([^ ]*?)(\n|\r|$)/g);
+		__ && __.forEach((_)=>{
+			let ___ = _.match(/([^ ]*?): ?([^ ]*?)(\n|\r|$)/i);
+			___ && (_headers[___[1]] = ___[2]);
+		});
+	}
 
-	const response = await got(hlsSrc).catch(console.log);
+	let mes = hlsSrc.match(/^https?:\/\/[^/]*/);
+	let _hosts = '';
+	if(mes && mes.length >= 1)
+	{
+		_hosts = mes[0];
+	}
+
+	if(_headers['Origin'] == null && _headers['origin'] == null)
+	{
+		_headers['Origin'] = _hosts;
+	}
+	if(_headers['Referer'] == null && _headers['referer'] == null)
+	{
+		_headers['Referer'] = _hosts;
+	}
+
+	const response = await got(hlsSrc,{headers:_headers}).catch(console.log);
 	{
 		let info = '';
 		let code = 0;
@@ -183,11 +239,11 @@ ipcMain.on('task-add', async function (event, arg:string) {
 						duration += segment.duration;
 					});
 					info = `点播资源解析成功，有 ${count_seg} 个片段，时长：${formatTime(duration)}，即将开始缓存...`;
-					startDownload(hlsSrc);
+					startDownload(hlsSrc,_headers);
 				}
 				else {
 					info = `直播资源解析成功，即将开始缓存...`;
-					startDownloadLive(hlsSrc);
+					startDownloadLive(hlsSrc,_headers);
 				}
 			}
 		}
@@ -201,6 +257,7 @@ class QueueObject {
 	}
 	public segment: any;
 	public url: string;
+	public headers: string;
 	public id: number;
 	public idx: number;
 	public dir: string;
@@ -247,7 +304,7 @@ class QueueObject {
 			{
 				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
 				let that = this;
-				await download (uri_ts, that.dir, {filename: filename + ".dl",timeout:30000}).catch((err)=>{
+				await download (uri_ts, that.dir, {filename: filename + ".dl",timeout:30000,headers:that.headers}).catch((err)=>{
 					console.log(err);
 					if(fs.existsSync(filpath_dl))
 							fs.unlinkSync( filpath_dl);
@@ -324,7 +381,7 @@ function queue_callback(that:QueueObject,callback:Function)
 	that.callback(callback);
 }
 
-async function startDownload(url:string, nId:number = null) {
+async function startDownload(url:string, headers:any = null ,nId:number = null) {
 	let id = nId == null ? new Date().getTime():nId;
 
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
@@ -336,7 +393,7 @@ async function startDownload(url:string, nId:number = null) {
 		fs.mkdirSync(dir, { recursive: true });
 	}
 
-	const response = await got(url).catch(console.log);
+	const response = await got(url,{headers:headers}).catch(console.log);
 	if(response == null || response.body == null || response.body == '')
 	{
 		return;
@@ -359,13 +416,14 @@ async function startDownload(url:string, nId:number = null) {
 		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
 		status:'初始化...',
 		isLiving:false,
+		headers:headers,
 		videopath:''
 	};
 	if(nId == null)
 	{
 		mainWindow.webContents.send('task-notify-create',video);
 	}
-
+	globalCond[id] = true;
 	let segments = parser.manifest.segments;
 	for (let iSeg = 0; iSeg < segments.length; iSeg++) {
 		let qo = new QueueObject();
@@ -373,6 +431,7 @@ async function startDownload(url:string, nId:number = null) {
 		qo.idx = iSeg;
 		qo.id = id;
 		qo.url = url;
+		qo.headers = headers;
 		qo.segment = segments[iSeg];
 		qo.then = function(){
 			count_downloaded = count_downloaded + 1
@@ -456,7 +515,7 @@ class FFmpegStreamReadable extends Readable {
 	_read() {}
 }
 
-async function startDownloadLive(url:string,nId:number = null) {
+async function startDownloadLive(url:string,headers:any = null,nId:number = null) {
 	let id = nId == null ? new Date().getTime() : nId;
 
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
@@ -477,6 +536,7 @@ async function startDownloadLive(url:string,nId:number = null) {
 		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
 		status:'初始化...',
 		isLiving:true,
+		headers:headers,
 		videopath:''
 	};
 	
@@ -496,7 +556,7 @@ async function startDownloadLive(url:string,nId:number = null) {
 	while (globalCond[id]) {
 
 		try {
-			const response = await got(url).catch(console.log);
+			const response = await got(url,{headers:headers}).catch(console.log);
 			if(response == null || response.body == null || response.body == '')
 			{
 				break;
@@ -559,7 +619,7 @@ async function startDownloadLive(url:string,nId:number = null) {
 						{
 							break;
 						}
-						await download (uri_ts, dir, { filename: filename + ".dl", timeout:30000 }).catch((err:any)=>{
+						await download (uri_ts, dir, { filename: filename + ".dl", timeout:30000 ,headers:headers}).catch((err:any)=>{
 							console.log(err);
 							if(fs.existsSync( filpath_dl ))
 							{
@@ -733,11 +793,11 @@ ipcMain.on('StartOrStop', function (event, arg:string) {
 			{
 				if(Element.isLiving == true)
 				{
-					startDownloadLive(Element.url, id);
+					startDownloadLive(Element.url, Element.headers,id);
 				}
 				else
 				{
-					startDownload(Element.url, id);
+					startDownload(Element.url, Element.headers, id);
 				}
 			}
 		});

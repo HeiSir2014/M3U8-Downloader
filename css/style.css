@@ -118,16 +118,41 @@ html{
     border: 1px solid;
     border-color: #47b3f7;
     box-sizing: border-box;
-    margin-left: 25px;
 }
 .heisir .main .addTask input[type=text]{
     width: 60%;
     padding: 0 10px;
     border-right: 0;
-    border-radius: 15px 0px 0px 15px;
+    border-radius: 0px;
+    margin-left: -5px;
 }
-.heisir .main .addTask input[type=button]{
-    width: 100px;
+.heisir .main .addTask .httpHeader{
+    width: 80px;
+    color: #fff;
+    background: #3385ff;
+    letter-spacing: 0px;
+    border-left: 0;
+    border-radius: 15px 0px  0px 15px;
+    cursor: pointer;
+}
+
+.heisir .main .addTask .headers{
+    width: 60%;
+    margin: 10px auto;
+}
+
+.heisir .main .addTask .headers .content{
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid;
+    border-color: #47b3f7;
+    box-sizing: border-box;
+    padding: 10px;
+    margin-left: -70px;
+}
+
+.heisir .main .addTask .download{
+    width: 80px;
     color: #fff;
     background: #3385ff;
     letter-spacing: 2px;
@@ -136,6 +161,7 @@ html{
     cursor: pointer;
     margin-left: -5px;
 }
+
 .heisir .main .addTask .info .success{
     color: mediumseagreen;
     margin-top: 5px;
@@ -146,7 +172,7 @@ html{
 }
 .heisir .main .TaskList{
     width: 85%;
-    height: calc(100% - 160px);
+    height: calc(100% - 260px);
     margin: 15px auto;
     padding: 10px;
     overflow-y: auto;

@@ -94,7 +94,7 @@ function createWindow() {
         // 与此同时，你应该删除相应的元素。
         mainWindow = null;
     });
-    mainWindow.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
 }
 function createPlayerWindow(src) {
     if (playerWindow == null) {

@@ -51,7 +51,7 @@ function createWindow() {
 
 	})
 
-	mainWindow.webContents.openDevTools();
+	//mainWindow.webContents.openDevTools();
 }
 function createPlayerWindow(src:string) {
 	if(playerWindow == null)

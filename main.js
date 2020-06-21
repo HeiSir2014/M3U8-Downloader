@@ -49,7 +49,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var _this = this;
 exports.__esModule = true;
-var _a = require('electron'), app = _a.app, BrowserWindow = _a.BrowserWindow, Tray = _a.Tray, ipcMain = _a.ipcMain, shell = _a.shell, Menu = _a.Menu;
+var _a = require('electron'), app = _a.app, BrowserWindow = _a.BrowserWindow, Tray = _a.Tray, ipcMain = _a.ipcMain, shell = _a.shell, Menu = _a.Menu, dialog = _a.dialog;
 var spawn = require('child_process').spawn;
 var path = require('path');
 var Parser = require('m3u8-parser').Parser;
@@ -61,6 +61,7 @@ var crypto = require('crypto');
 var got = require('got');
 var Readable = require('stream').Readable;
 var ffmpeg = require('fluent-ffmpeg');
+var package_self = require('./package.json');
 var isdelts = true;
 var mainWindow = null;
 var playerWindow = null;
@@ -124,6 +125,33 @@ function createPlayerWindow(src) {
     // 加载index.html文件
     playerWindow.loadFile(path.join(__dirname, 'player.html'), { search: "src=" + src });
 }
+function checkUpdate() {
+    return __awaiter(this, void 0, void 0, function () {
+        var body, _package;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, got("https://tools.heisir.cn/HLSDownload/package.json")["catch"](console.log)];
+                case 1:
+                    body = (_a.sent()).body;
+                    if (body != '') {
+                        try {
+                            _package = JSON.parse(body);
+                            if (_package.version != package_self.version) {
+                                if (dialog.showMessageBoxSync(mainWindow, { type: 'question', buttons: ["Yes", "No"], message: "\u68C0\u6D4B\u5230\u65B0\u7248\u672C(" + _package.version + ")\uFF0C\u662F\u5426\u8981\u6253\u5F00\u5347\u7EA7\u9875\u9762\uFF0C\u4E0B\u8F7D\u6700\u65B0\u7248" }) == 0) {
+                                    shell.openExternal("https://tools.heisir.cn/HLSDownload/");
+                                    return [2 /*return*/];
+                                }
+                            }
+                        }
+                        catch (error) {
+                            console.log(error);
+                        }
+                    }
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
 app.on('ready', function () {
     createWindow();
     tray = new Tray(path.join(__dirname, 'icon/logo.png'));
@@ -160,6 +188,8 @@ app.on('ready', function () {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 4, , 5]);
+                    checkUpdate();
+                    setInterval(checkUpdate, 600000);
                     HMACCOUNT = '';
                     if (fs.existsSync('tongji.ini')) {
                         HMACCOUNT = fs.readFileSync('tongji.ini', { encoding: "utf-8", flag: "r" });
@@ -307,10 +337,11 @@ var QueueObject = /** @class */ (function () {
     }
     QueueObject.prototype.callback = function (_callback) {
         return __awaiter(this, void 0, void 0, function () {
-            var partent_uri, segment, uri_ts, mes, filename, filpath, filpath_dl, index, that, stat, aes_path, key_uri, key_, iv_, cipher, inputData, outputData;
+            var partent_uri, segment, uri_ts, mes, filename, filpath, filpath_dl_1, index, that, stat, aes_path, key_uri, key_, iv_, cipher, inputData, outputData, e_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        _a.trys.push([0, 11, 12, 13]);
                         if (!globalCond[this.id]) {
                             _callback();
                             return [2 /*return*/];
@@ -335,7 +366,7 @@ var QueueObject = /** @class */ (function () {
                         }
                         filename = ((this.idx + 1) + '').padStart(6, '0') + ".ts";
                         filpath = path.join(this.dir, filename);
-                        filpath_dl = path.join(this.dir, filename + ".dl");
+                        filpath_dl_1 = path.join(this.dir, filename + ".dl");
                         console.log("2 " + segment.uri, "" + filename);
                         index = 0;
                         _a.label = 1;
@@ -345,13 +376,13 @@ var QueueObject = /** @class */ (function () {
                         that = this;
                         return [4 /*yield*/, download(uri_ts, that.dir, { filename: filename + ".dl", timeout: 30000, headers: that.headers })["catch"](function (err) {
                                 console.log(err);
-                                if (fs.existsSync(filpath_dl))
-                                    fs.unlinkSync(filpath_dl);
+                                if (fs.existsSync(filpath_dl_1))
+                                    fs.unlinkSync(filpath_dl_1);
                             })];
                     case 2:
                         _a.sent();
-                        if (!fs.existsSync(filpath_dl)) return [3 /*break*/, 8];
-                        stat = fs.statSync(filpath_dl);
+                        if (!fs.existsSync(filpath_dl_1)) return [3 /*break*/, 8];
+                        stat = fs.statSync(filpath_dl_1);
                         if (!(stat.size > 0)) return [3 /*break*/, 7];
                         if (!(segment.key != null && segment.key.method != null)) return [3 /*break*/, 5];
                         aes_path = path.join(this.dir, "aes.key");
@@ -360,7 +391,7 @@ var QueueObject = /** @class */ (function () {
                         if (!/^http.*/.test(segment.key.uri)) {
                             key_uri = partent_uri + segment.key.uri;
                         }
-                        return [4 /*yield*/, download(key_uri, that.dir, { filename: "aes.key" })["catch"](console.error)];
+                        return [4 /*yield*/, download(key_uri, that.dir, { filename: "aes.key", headers: that.headers })["catch"](console.error)];
                     case 3:
                         _a.sent();
                         _a.label = 4;
@@ -372,26 +403,28 @@ var QueueObject = /** @class */ (function () {
                                     : Buffer.from(that.idx.toString(16).padStart(32, '0'), 'hex');
                                 cipher = crypto.createDecipheriv((segment.key.method + "-cbc").toLowerCase(), key_, iv_);
                                 cipher.on('error', console.error);
-                                inputData = fs.readFileSync(filpath_dl);
+                                inputData = fs.readFileSync(filpath_dl_1);
                                 outputData = Buffer.concat([cipher.update(inputData), cipher.final()]);
                                 fs.writeFileSync(filpath, outputData);
-                                fs.unlinkSync(filpath_dl);
+                                fs.unlinkSync(filpath_dl_1);
                                 that.then && that.then();
-                                _callback();
-                                return [2 /*return*/];
                             }
                             catch (error) {
                                 console.error(error);
-                                fs.unlinkSync(filpath_dl);
+                                fs.unlinkSync(filpath_dl_1);
+                            }
+                            finally {
+                                _callback();
+                                return [2 /*return*/];
                             }
                         }
                         return [3 /*break*/, 6];
                     case 5:
-                        fs.renameSync(filpath_dl, filpath);
+                        fs.renameSync(filpath_dl_1, filpath);
                         _a.label = 6;
                     case 6: return [3 /*break*/, 8];
                     case 7:
-                        fs.unlinkSync(filpath_dl);
+                        fs.unlinkSync(filpath_dl_1);
                         _a.label = 8;
                     case 8:
                         if (fs.existsSync(filpath)) {
@@ -408,8 +441,15 @@ var QueueObject = /** @class */ (function () {
                         else {
                             this["catch"] && this["catch"]();
                         }
+                        return [3 /*break*/, 13];
+                    case 11:
+                        e_1 = _a.sent();
+                        console.log(e_1);
+                        return [3 /*break*/, 13];
+                    case 12:
                         _callback();
-                        return [2 /*return*/];
+                        return [7 /*endfinally*/];
+                    case 13: return [2 /*return*/];
                 }
             });
         });

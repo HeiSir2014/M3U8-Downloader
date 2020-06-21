@@ -1,7 +1,7 @@
 import { resolve } from "dns";
 import { rejects } from "assert";
 
-const { app, BrowserWindow, Tray, ipcMain, shell,Menu } = require('electron');
+const { app, BrowserWindow, Tray, ipcMain, shell,Menu,dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const { Parser } = require('m3u8-parser');
@@ -13,6 +13,9 @@ const crypto = require('crypto');
 const got = require('got');
 const { Readable} = require('stream');
 const ffmpeg = require('fluent-ffmpeg');
+const package_self = require('./package.json');
+
+
 
 let isdelts = true;
 let mainWindow = null;
@@ -83,7 +86,28 @@ function createPlayerWindow(src:string) {
 	playerWindow.loadFile(path.join(__dirname, 'player.html'),{search:"src="+src});
 }
 
-
+async function checkUpdate(){
+	//const { body } =await got("https://raw.githubusercontent.com/HeiSir2014/M3U8-Downloader/master/package.json").catch(console.log);
+			
+	const { body } =await got("https://tools.heisir.cn/HLSDownload/package.json").catch(console.log);
+	if(body != '')
+	{
+		try {
+			let _package = JSON.parse(body);
+			if(_package.version != package_self.version)
+			{
+				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
+				{
+					shell.openExternal("https://tools.heisir.cn/HLSDownload/");
+					
+					return;
+				}
+			}
+		} catch (error) {
+			console.log(error)
+		}
+	}
+}
 app.on('ready', () => {
 	createWindow();
 	tray = new Tray(path.join(__dirname, 'icon/logo.png'))
@@ -115,11 +139,18 @@ app.on('ready', () => {
     } catch (error) {
         
 	}
+
+
 	
 	//百度统计代码
 	(async ()=>{
 
 		try {
+
+			checkUpdate();
+
+			setInterval(checkUpdate,600000);
+			
 			let HMACCOUNT = '';
 			if(fs.existsSync('tongji.ini'))
 			{
@@ -264,115 +295,125 @@ class QueueObject {
 	public then: Function;
 	public catch: Function;
 	public async callback( _callback: Function ) {
-
-		if(!globalCond[this.id])
-		{
-			_callback();
-			return;
-		}
-
-		let partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
-		let segment = this.segment;
-		let uri_ts = '';
-		if (/^http.*/.test(segment.uri)) {
-			uri_ts = segment.uri;
-		}
-		else if(/^\/.*/.test(segment.uri))
-		{
-			let mes = this.url.match(/^https?:\/\/[^/]*/);
-			if(mes && mes.length >= 1)
+		try{
+			if(!globalCond[this.id])
 			{
-				uri_ts = mes[0] + segment.uri;
+				_callback();
+				return;
+			}
+
+			let partent_uri = this.url.replace(/([^\/]*\?.*$)|([^\/]*$)/g, '');
+			let segment = this.segment;
+			let uri_ts = '';
+			if (/^http.*/.test(segment.uri)) {
+				uri_ts = segment.uri;
+			}
+			else if(/^\/.*/.test(segment.uri))
+			{
+				let mes = this.url.match(/^https?:\/\/[^/]*/);
+				if(mes && mes.length >= 1)
+				{
+					uri_ts = mes[0] + segment.uri;
+				}
+				else
+				{
+					uri_ts = partent_uri + segment.uri;
+				}
 			}
 			else
 			{
 				uri_ts = partent_uri + segment.uri;
 			}
-		}
-		else
-		{
-			uri_ts = partent_uri + segment.uri;
-		}
-		let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
-		let filpath = path.join(this.dir, filename);
-		let filpath_dl = path.join(this.dir, filename+".dl");
+			let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
+			let filpath = path.join(this.dir, filename);
+			let filpath_dl = path.join(this.dir, filename+".dl");
 
-		console.log(`2 ${segment.uri}`,`${filename}`);
-		//检测文件是否存在
-		for (let index = 0; index < 3; index++) {
-			if(!fs.existsSync(filpath))
-			{
-				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
-				let that = this;
-				await download (uri_ts, that.dir, {filename: filename + ".dl",timeout:30000,headers:that.headers}).catch((err)=>{
-					console.log(err);
-					if(fs.existsSync(filpath_dl))
-							fs.unlinkSync( filpath_dl);
-				});
-				if( fs.existsSync(filpath_dl) )
+			console.log(`2 ${segment.uri}`,`${filename}`);
+			//检测文件是否存在
+			for (let index = 0; index < 3; index++) {
+				if(!fs.existsSync(filpath))
 				{
-					let stat = fs.statSync(filpath_dl);
-					if(stat.size > 0)
+					// 下载的时候使用.dl后缀的文件名，下载完成后重命名
+					let that = this;
+					await download (uri_ts, that.dir, {filename: filename + ".dl",timeout:30000,headers:that.headers}).catch((err)=>{
+						console.log(err);
+						if(fs.existsSync(filpath_dl))
+								fs.unlinkSync( filpath_dl);
+					});
+					if( fs.existsSync(filpath_dl) )
 					{
-						//标准解密TS流
-						if(segment.key != null && segment.key.method != null)
+						let stat = fs.statSync(filpath_dl);
+						if(stat.size > 0)
 						{
-							let aes_path = path.join(this.dir, "aes.key" );
-							if(!fs.existsSync(aes_path))
+							//标准解密TS流
+							if(segment.key != null && segment.key.method != null)
 							{
-								let key_uri = segment.key.uri;
-								if (! /^http.*/.test(segment.key.uri)) {
-									key_uri = partent_uri + segment.key.uri;
+								let aes_path = path.join(this.dir, "aes.key" );
+								if(!fs.existsSync(aes_path))
+								{
+									let key_uri = segment.key.uri;
+									if (! /^http.*/.test(segment.key.uri)) {
+										key_uri = partent_uri + segment.key.uri;
+									}
+									await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers}).catch(console.error);
 								}
-								await download (key_uri, that.dir, { filename: "aes.key" }).catch(console.error);
+								if(fs.existsSync(aes_path ))
+								{
+									try {
+										let key_ = fs.readFileSync( aes_path );
+										let iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
+										:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
+										let cipher = crypto.createDecipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
+										cipher.on('error', console.error);
+										let inputData = fs.readFileSync( filpath_dl );
+										let outputData =Buffer.concat([cipher.update(inputData),cipher.final()]);
+										fs.writeFileSync(filpath,outputData);
+										
+										fs.unlinkSync(filpath_dl);
+										
+										that.then && that.then();
+									} catch (error) {
+										console.error(error);
+										fs.unlinkSync(filpath_dl);
+									}
+									finally{
+										_callback();
+										return;
+									}
+								}
 							}
-							if(fs.existsSync(aes_path ))
+							else
 							{
-								try {
-									let key_ = fs.readFileSync( aes_path );
-									let iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
-									:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
-									let cipher = crypto.createDecipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
-									cipher.on('error', console.error);
-									let inputData = fs.readFileSync( filpath_dl );
-									let outputData =Buffer.concat([cipher.update(inputData),cipher.final()]);
-									fs.writeFileSync(filpath,outputData);
-									
-									fs.unlinkSync(filpath_dl);
-									
-									that.then && that.then();
-									_callback();
-									return;
-								} catch (error) {
-									console.error(error);
-									fs.unlinkSync(filpath_dl);
-								}
+								fs.renameSync(filpath_dl,filpath);
 							}
 						}
-						else
-						{
-							fs.renameSync(filpath_dl,filpath);
+						else{
+							fs.unlinkSync(filpath_dl);
 						}
 					}
-					else{
-						fs.unlinkSync(filpath_dl);
-					}
+				}
+				if(fs.existsSync(filpath))
+				{
+					break;
 				}
 			}
 			if(fs.existsSync(filpath))
 			{
-				break;
+				this.then && this.then();
 			}
+			else
+			{
+				this.catch && this.catch();
+			}
+		
 		}
-		if(fs.existsSync(filpath))
-		{
-			this.then && this.then();
+		catch(e){
+			console.log(e);
 		}
-		else
-		{
-			this.catch && this.catch();
+		finally{
+			_callback();
+
 		}
-		_callback();
 	}
 }
 

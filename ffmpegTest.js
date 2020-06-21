@@ -8,11 +8,29 @@ const got = require('got');
 
 
 (async () => {
-    const { body } = await got('http://v.ytsjk.cn/38df87dc4b70456aa2eadde6e713fa38/6a2a090b523d4c9491277a41bb6a2567-dcb98c29eb2d3f032c85e7a6cf2c5b83-sd.m3u8',{headers:{
-        'Origin':'http://www.ytsjk.cn',
-        'Referer':'http://www.ytsjk.cn',
-    }});
-    console.log(body);
+    const { headers } = await got("https://www.aoxx69.com/video/video-play?id=MIAA-203&type=1&autoplay=0&poster=");
+    console.log(headers);
+    let cookies = '';
+    if(headers['set-cookie'])
+    {
+        headers['set-cookie'].forEach(cookie => {
+            let mes = cookie.match(/^(.*?)=(.*?);/i)
+            mes && (cookies += mes[0]);
+        });
+        console.log(cookies);
+    }
+    const h = {
+        'Origin':'https://www.aoxx69.com',
+        'Referer':'https://www.aoxx69.com',
+        'cookie':cookies,
+    };
+    const { body } = await got('https://ssa.aoxx69.com/MIAA-203/MIAA-203.m3u8',{ headers : h });
+
+    //console.log(body);
+
+    //const r  = await got('https://ssa.aoxx69.com/MIAA-203/ts/MIAA-203-2.ts',{ headers:h});
+
+    //console.log(r);
 })();
 
 

@@ -119,7 +119,12 @@ html{
     border-color: #47b3f7;
     box-sizing: border-box;
 }
-.heisir .main .addTask input[type=text]{
+
+.heisir .main .addTask .urls{
+    line-height: 32px;
+    border: 1px solid;
+    border-color: #47b3f7;
+    box-sizing: border-box;
     width: 60%;
     padding: 0 10px;
     border-right: 0;

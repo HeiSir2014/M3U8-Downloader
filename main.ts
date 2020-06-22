@@ -150,7 +150,7 @@ app.on('ready', () => {
 			checkUpdate();
 
 			setInterval(checkUpdate,600000);
-			
+
 			let HMACCOUNT = '';
 			if(fs.existsSync('tongji.ini'))
 			{
@@ -161,13 +161,13 @@ app.on('ready', () => {
 				HMACCOUNT = headers['set-cookie'][0].match(/HMACCOUNT=(.*?);/i)[1];
 				fs.writeFileSync('tongji.ini',HMACCOUNT,{encoding:"utf-8",flag:"w"})
 			} catch (error_) {
-				
+				console.log(error_)
 			}
 			console.log(HMACCOUNT);
 			await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime()/1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=https%3A%2F%2Ftools.heisir.cn%2FM3U8Soft-Client%2F`,{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
 			await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": "https://tools.heisir.cn/M3U8Soft-Client/","Cookie":"HMACCOUNT="+HMACCOUNT}});
 		} catch (error) {
-			
+			console.log(error)
 		}
 	
 	})();

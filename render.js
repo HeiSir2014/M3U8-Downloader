@@ -14,7 +14,7 @@ aqqgroup.onclick = ahome.onclick = function(e){
     shell.openExternal(href);
 }
 
-var input_url = document.querySelector('.heisir .main .addTask input[type=text]');
+var input_url = document.querySelector('.heisir .main .addTask .urls');
 var btnAddTask = document.querySelector('.heisir .main .addTask .download');
 var btnHeaders = document.querySelector('.heisir .main .addTask .httpHeader');
 var info = document.querySelector('.heisir .main .addTask .info');

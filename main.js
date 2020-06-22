@@ -202,6 +202,7 @@ app.on('ready', function () {
                         fs.writeFileSync('tongji.ini', HMACCOUNT, { encoding: "utf-8", flag: "w" });
                     }
                     catch (error_) {
+                        console.log(error_);
                     }
                     console.log(HMACCOUNT);
                     return [4 /*yield*/, got("http://hm.baidu.com/hm.gif?hca=" + HMACCOUNT + "&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=" + (new Date().getTime() / 1000) + "&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=https%3A%2F%2Ftools.heisir.cn%2FM3U8Soft-Client%2F", { headers: { "Referer": "https://tools.heisir.cn/M3U8Soft-Client/", "Cookie": "HMACCOUNT=" + HMACCOUNT } })];
@@ -213,6 +214,7 @@ app.on('ready', function () {
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();
+                    console.log(error_1);
                     return [3 /*break*/, 5];
                 case 5: return [2 /*return*/];
             }

@@ -90,7 +90,7 @@ function createPlayerWindow(src:string) {
 async function checkUpdate(){
 	//const { body } =await got("https://raw.githubusercontent.com/HeiSir2014/M3U8-Downloader/master/package.json").catch(console.log);
 			
-	const { body } =await got("https://tools.heisir.cn/HLSDownload/package.json").catch(console.log);
+	const { body } =await got("https://heisir2014.github.io/M3U8-Downloader/package.json").catch(console.log);
 	if(body != '')
 	{
 		try {

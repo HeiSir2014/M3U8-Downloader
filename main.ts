@@ -35,7 +35,8 @@ function createWindow() {
 		skipTaskbar: false,
 		transparent: false, frame: false, resizable: true,
 		webPreferences: {
-			nodeIntegration: true
+			nodeIntegration: true,
+			spellcheck: false
 		},
 		icon: path.join(__dirname, 'icon/logo.png'),
 		alwaysOnTop: false,

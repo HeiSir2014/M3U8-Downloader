@@ -4,6 +4,30 @@ const fs = require('fs');
 const { Readable} = require('stream');
 const path = require('path');
 const got = require('got');
+const { default: async } = require('async');
+
+
+(async ()=>{
+    try {
+        console.log("1");
+        try {
+            console.log("2");
+        } catch (error) {
+            
+        }
+        finally{
+            console.log("3");
+        }
+        return;
+    }
+    catch (error) {
+            
+    }
+    finally{
+        console.log("4");
+    }
+})();
+    
 
 /*
 

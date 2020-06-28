@@ -30,7 +30,7 @@ const globalConfigDir = app.getPath('userData');
 const globalConfigPath = path.join(globalConfigDir,'config.json');
 const globalConfigVideoPath = path.join(globalConfigDir,'config_videos.json');
 
-const httpTimeout = {socket: 30000, request: 30000, response:30000};
+const httpTimeout = {socket: 300000, request: 300000, response:300000};
 
 const referer = `https://tools.heisir.cn/M3U8Soft-Client?v=${package_self.version}`;
 
@@ -263,9 +263,9 @@ ipcMain.on('task-add', async function (event, arg, headers) {
 	let _headers = {};
 	if(headers != '')
 	{
-		let __ = headers.match(/([^ ]*?): ?([^ ]*?)(\n|\r|$)/g);
+		let __ = headers.match(/(.*?): ?(.*?)(\n|\r|$)/g);
 		__ && __.forEach((_)=>{
-			let ___ = _.match(/([^ ]*?): ?([^ ]*?)(\n|\r|$)/i);
+			let ___ = _.match(/(.*?): ?(.*?)(\n|\r|$)/i);
 			___ && (_headers[___[1]] = ___[2]);
 		});
 	}

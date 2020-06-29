@@ -77,7 +77,7 @@ function addVideo(data)
 
     if(data.status != "已完成")
     {
-        newItem.querySelector('.del').style.display='none';
+        //newItem.querySelector('.del').style.display='none';
         newItem.querySelector('.play').style.display='none';
     }
     else

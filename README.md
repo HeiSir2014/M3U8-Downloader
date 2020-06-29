@@ -41,6 +41,11 @@ QQ交流群：341972319
 在chrome浏览器打开视频网页，按下F12,页签点击到Network页面，在Filter框里输入"m3u8",然后按F5刷新页面，如果网页里的视频使用的是HLS源，就可以在这里捕获到视频流地址，然后选中右键 Copy -> Copy Link Address.
 提供m3u8源地址，下载并无损转码Mp4文件
 
+<div style="overflow: hidden;position: relative;height: 540px;width: 100%;max-width: 100%;">
+    <iframe style="position: absolute;width: 100%;height: 628px;margin-top: -48px;" src="//player.bilibili.com/player.html?aid=498666070&bvid=BV1QK411n7VJ&cid=206827525&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+</div>
+
+
 # 下载
 
 目前仅编译了Windows x64版本，期待其他大神编译其他平台版本。

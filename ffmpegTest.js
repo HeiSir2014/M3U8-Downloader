@@ -8,24 +8,11 @@ const { default: async } = require('async');
 
 
 (async ()=>{
-    try {
-        console.log("1");
-        try {
-            console.log("2");
-        } catch (error) {
-            
-        }
-        finally{
-            console.log("3");
-        }
-        return;
-    }
-    catch (error) {
-            
-    }
-    finally{
-        console.log("4");
-    }
+    
+    var respose = await got("https://tools.heisir.cn/HLSDownload/ChromeVideoPlugin.crx",{responseType:"buffer"});
+    console.log(respose.headers['content-length'])
+    console.log(respose.body.length)
+    console.log(respose.error);
 })();
     
 

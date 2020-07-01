@@ -29,8 +29,9 @@ let globalCond ={};
 const globalConfigDir = app.getPath('userData');
 const globalConfigPath = path.join(globalConfigDir,'config.json');
 const globalConfigVideoPath = path.join(globalConfigDir,'config_videos.json');
+let globalConfigSaveVideoDir = '';
 
-const httpTimeout = {socket: 300000, request: 300000, response:300000};
+const httpTimeout = {socket: 600000, request: 600000, response:600000};
 
 const referer = `https://tools.heisir.cn/M3U8Soft-Client?v=${package_self.version}`;
 
@@ -79,7 +80,7 @@ function createWindow() {
 	});
 	mainWindow.setMenu(null)
 	// 加载index.html文件
-	mainWindow.loadFile(path.join(__dirname, 'index.html'));
+	mainWindow.loadFile( path.join(__dirname, 'start.html') );
 	//mainWindow.openDevTools();
 	// 当 window 被关闭，这个事件会被触发。
 	mainWindow.on('closed', () => {
@@ -89,7 +90,6 @@ function createWindow() {
 		mainWindow = null;
 
 	})
-	//mainWindow.webContents.openDevTools();
 }
 function createPlayerWindow(src) {
 	if(playerWindow == null)
@@ -175,6 +175,9 @@ app.on('ready', () => {
 		logger.error(error);
 	}
 
+	globalConfigSaveVideoDir = nconf.get('SaveVideoDir');
+
+
 	//百度统计代码
 	(async ()=>{
 
@@ -252,12 +255,16 @@ ipcMain.on("hide-windows",function(){
 	}
 });
 
+ipcMain.on('get-version', function (event, arg) {
+    event.sender.send('get-version-reply', package_self.version);
+});
+
 ipcMain.on('get-all-videos', function (event, arg) {
 
     event.sender.send('get-all-videos-reply', configVideos);
 });
 
-ipcMain.on('task-add', async function (event, arg, headers) {
+ipcMain.on('task-add', async function (event, arg, headers, myKeyIv, taskName) {
 	logger.info(arg);
 	let hlsSrc = arg;
 	let _headers = {};
@@ -307,11 +314,11 @@ ipcMain.on('task-add', async function (event, arg, headers) {
 						duration += segment.duration;
 					});
 					info = `点播资源解析成功，有 ${count_seg} 个片段，时长：${formatTime(duration)}，即将开始缓存...`;
-					startDownload(hlsSrc,_headers);
+					startDownload(hlsSrc,_headers,null,myKeyIv,taskName);
 				}
 				else {
 					info = `直播资源解析成功，即将开始缓存...`;
-					startDownloadLive(hlsSrc,_headers);
+					startDownloadLive(hlsSrc,_headers,null,myKeyIv,taskName);
 				}
 			}
 		}
@@ -324,6 +331,7 @@ class QueueObject {
 		this.segment = null;
 		this.url = '';
 		this.headers = '';
+		this.myKeyIv = '';
 		this.id = 0;
 		this.idx = 0;
 		this.dir = '';
@@ -385,7 +393,7 @@ class QueueObject {
 				{
 					//标准解密TS流
 					let aes_path = path.join(this.dir, "aes.key" );
-					if(!fs.existsSync( aes_path ))
+					if( !myKeyIv && !fs.existsSync( aes_path ))
 					{
 						let key_uri = segment.key.uri;
 						if (! /^http.*/.test(segment.key.uri)) {
@@ -406,12 +414,28 @@ class QueueObject {
 
 						await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout}).catch(console.error);
 					}
-					if(fs.existsSync( aes_path ))
+					if(myKeyIv || fs.existsSync( aes_path ))
 					{
 						try {
-							let key_ = fs.readFileSync( aes_path );
-							let iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
-							:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
+							let key_ =null;
+							let iv_ =null;
+							if(!myKeyIv)
+							{
+								key_ = fs.readFileSync( aes_path );
+								iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
+								:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
+							}
+							else{
+								
+								key_ = Buffer.from(myKeyIv.substr(0,32),'hex' );
+								if(myKeyIv.length >= 64)
+								{
+									iv_ = Buffer.from(myKeyIv.substr(myKeyIv.length - 32,32),'hex' );
+								}
+								else{
+									iv_ = Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' )
+								}
+							}
 							let cipher = crypto.createDecipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
 							cipher.on('error', console.error);
 							let inputData = fs.readFileSync( filpath_dl );
@@ -461,10 +485,16 @@ function queue_callback(that,callback)
 	that.callback(callback);
 }
 
-async function startDownload(url, headers = null ,nId = null) {
+async function startDownload(url, headers = null ,nId = null,myKeyIv = null,taskName = null) {
 	let id = nId == null ? new Date().getTime():nId;
-
-	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
+	if(!taskName){
+		taskName = `${id}`;
+	}
+	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName);
+	if(globalConfigSaveVideoDir)
+	{
+		dir = path.join(globalConfigSaveVideoDir, taskName)
+	}
 	logger.info(dir);
 	let filesegments = [];
 
@@ -497,6 +527,8 @@ async function startDownload(url, headers = null ,nId = null) {
 		status:'初始化...',
 		isLiving:false,
 		headers:headers,
+		taskName:taskName,
+		myKeyIv:myKeyIv,
 		videopath:''
 	};
 	if(nId == null)
@@ -512,6 +544,7 @@ async function startDownload(url, headers = null ,nId = null) {
 		qo.id = id;
 		qo.url = url;
 		qo.headers = headers;
+		qo.myKeyIv = myKeyIv;
 		qo.segment = segments[iSeg];
 		qo.then = function(){
 			count_downloaded = count_downloaded + 1
@@ -595,10 +628,16 @@ class FFmpegStreamReadable extends Readable {
 	_read() {}
 }
 
-async function startDownloadLive(url,headers = null,nId = null) {
+async function startDownloadLive(url,headers = null,nId = null,myKeyIv = null,taskName = null) {
 	let id = nId == null ? new Date().getTime() : nId;
-
-	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+id);
+	if(!taskName){
+		taskName = id;
+	}
+	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName);
+	if(globalConfigSaveVideoDir)
+	{
+		dir = path.join(globalConfigSaveVideoDir, taskName)
+	}
 	logger.info(dir);
 	if(!fs.existsSync(dir))
 	{
@@ -616,6 +655,8 @@ async function startDownloadLive(url,headers = null,nId = null) {
 		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
 		status:'初始化...',
 		isLiving:true,
+		myKeyIv:myKeyIv,
+		taskName:taskName,
 		headers:headers,
 		videopath:''
 	};
@@ -848,7 +889,7 @@ ipcMain.on('delvideo', function (event, id) {
 });
 
 ipcMain.on('opendir', function (event, arg) {
-	shell.openExternal(arg);
+	shell.showItemInFolder(arg);
 });
 
 ipcMain.on('playvideo', function (event, arg) {
@@ -871,11 +912,11 @@ ipcMain.on('StartOrStop', function (event, arg) {
 			{
 				if(Element.isLiving == true)
 				{
-					startDownloadLive(Element.url, Element.headers,id);
+					startDownloadLive(Element.url, Element.headers,id,Element.myKeyIv,Element.taskName);
 				}
 				else
 				{
-					startDownload(Element.url, Element.headers, id);
+					startDownload(Element.url, Element.headers,id,Element.myKeyIv,Element.taskName);
 				}
 			}
 		});
@@ -884,4 +925,29 @@ ipcMain.on('StartOrStop', function (event, arg) {
 
 ipcMain.on('setting_isdelts', function (event, arg) {
 	isdelts = arg;
+});
+
+ipcMain.on('get-config-dir', function (event, arg) {
+	event.sender.send("get-config-dir-reply",globalConfigSaveVideoDir);
+})
+
+ipcMain.on('open-config-dir', function (event, arg) {
+	let SaveDir = globalConfigSaveVideoDir;
+	logger.debug(`初始目录 ${SaveDir}`);
+	dialog.showOpenDialog(mainWindow, {
+		title:"请选择文件夹",
+		defaultPath: SaveDir ? SaveDir : '',
+		properties: ['openDirectory','createDirectory'],
+	}).then(result => {
+		logger.debug(`选择目录 ${result.filePaths}`);
+		if(!result.canceled && result.filePaths.length == 1)
+		{
+			globalConfigSaveVideoDir = result.filePaths[0];
+			nconf.set('SaveVideoDir',globalConfigSaveVideoDir);
+			nconf.save(logger.error);
+			event.sender.send("get-config-dir-reply",globalConfigSaveVideoDir);
+		}
+	}).catch(err => {
+		logger.error(err)
+	})
 });

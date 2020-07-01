@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="css/start.css">
+</head>
+
+<body class="heisir">
+    <div id="app">
+        <template>
+            <el-container>
+                <el-header height='50px'>
+                    <el-row>
+                        <el-col :span="14">
+                            <div class="title">{{'M3U8-Downloader v' + version}}</div>
+                        </el-col>
+                    </el-row>
+
+                    <div class="systemTool">
+                        <el-dropdown trigger="click">
+                            <span class="el-dropdown-link">帮助</span>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item icon="el-icon-link">
+                                    <a class="mylink" href="https://tools.heisir.cn/HLSDownload/"
+                                    v-on:click.stop.prevent="clickAClick">官网</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item icon="el-icon-link">
+                                    <a class="mylink" href="https://github.com/HeiSir2014/M3U8-Downloader"
+                            v-on:click.stop.prevent="clickAClick">开放源码</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item icon="el-icon-connection">
+                                    <a class="mylink" href="https://jq.qq.com/?_wv=1027&k=nhFrZBS0"
+                            v-on:click.stop.prevent="clickAClick">点击加群</a>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
+                        <el-button class="button" icon="el-icon-setting" v-on:click="clickSetting"></el-button>
+                        <el-button class="button" icon="el-icon-close" v-on:click="clickClose"></el-button>
+                    </div>
+                </el-header>
+                <el-main class="main">
+                    <el-tabs type="border-card" v-model="tabPane">
+                        <el-tab-pane label="在线M3U8">
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">视频源:</span>
+                                </el-col>
+                                <el-col :span="16">
+                                    <el-input placeholder="请输入 M3U8 视频源（http://host/index.m3u8）" v-model="m3u8_url"
+                                        clearable>
+                                        <i slot="prefix" class="el-input__icon el-icon-link"></i>
+                                    </el-input>
+                                </el-col>
+                                <!--
+                                <el-col :span="3">
+                                    <el-button class="mybutton" type="warning" icon="el-icon-s-tools" @click="dlg_header_visible = true">
+                                        自定义设置</el-button>
+                                </el-col>
+                                -->
+                                <el-col :span="3">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-news" @click="clickNewTask">新建下载</el-button>
+                                </el-col>
+                            </el-row>
+                            <br>
+
+                            <ul class="list TaskList" style="overflow:auto">
+                                <li v-for="o in allVideos" :key="o.id" class="item">
+                                    <div class="m3u8"></div>
+                                    <div class="link"><input type="text" :value="o.url" readonly></div>
+                                    
+                                    <div class="name"><span >名称：</span><span class="value">{{o.taskName}}</span></div>
+                                    <div class="time"><span >时间：</span><span class="value">{{o.time}}</span></div>
+                                    <div class="status">
+                                        <span >状态：</span><span class="value">{{o.status}}</span>
+                                    </div>
+                                    <div class="opt top">
+                                        <input class="opendir" opt="opendir" :data="o.dir" type="button" value="打开文件夹" @click="clickItemOptData">
+                                    </div>
+                                    <div class="opt bottom">
+                                        <input class="del" opt="delvideo" :data="o.id" type="button" value="删除" @click="clickItemOptData">
+                                        <input class="play" opt="playvideo" :data="o.videopath" type="button" value="播放" @click="clickItemOptData">
+                                        <input class="StartStop" opt="StartOrStop" :data="o.id" type="button" value="停止" @click="clickItemOptData">
+                                    </div>
+                                </li>
+                            </ul>
+                            <!--
+                            <el-dialog title="自定义设置" :visible.sync="dlg_header_visible" width="60%" :modal="true"
+                                :close-on-click-modal="false" :close-on-press-escape="false">
+                                <el-form>
+                                    <el-form-item label="附加头" label-position="top">
+                                        <el-input type="textarea" :rows="4" placeholder="请输入一行一个Header，例如：
+Origin: http://www.host.com
+Referer: http://www.host.com" v-model="headers"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="使用自定义AES KEY和IV值解码 (32位KEY和32位IV值)" label-position="top">
+                                        <el-input type="text" placeholder="KEY和IV值(HEX格式)" v-model="headers"></el-input>
+                                    </el-form-item>
+                                </el-form>
+                            </el-dialog>
+                            -->
+                            <el-dialog title="新建下载任务" :visible.sync="dlg_newtask_visible" width="60%" :modal="true"
+                                :close-on-click-modal="false" :close-on-press-escape="false" :center="true">
+                                <el-form>
+                                    <el-form-item label="附加头" label-position="top">
+                                        <el-input type="textarea" :rows="4" placeholder="请输入一行一个Header，例如：
+Origin: http://www.host.com
+Referer: http://www.host.com" v-model="headers"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="使用自定义AES KEY和IV值解码 (32位KEY和32位IV值)" label-position="top">
+                                        <el-input type="text" placeholder="KEY和IV值(HEX格式)" v-model="myKeyIV"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="欲保存的文件夹名" label-position="top">
+                                        <el-input type="text" placeholder="可以为空" v-model="taskName"></el-input>
+                                    </el-form-item>
+                                </el-form>
+                                <div slot="footer" class="dialog-footer">
+                                    <el-button type="primary" @click="clickNewTaskOK">确 定</el-button>
+                                </div>
+                            </el-dialog>
+
+
+                        </el-tab-pane>
+                        <el-tab-pane label="本地M3U8">
+                            <div class="tip-dev">正在积极研发中</div>
+                        </el-tab-pane>
+                        <el-tab-pane label="在线M3U8-批量">
+                            <div class="tip-dev">正在积极研发中</div>
+                        </el-tab-pane>
+                        <el-tab-pane label="手工合并TS流">
+                            <div class="tip-dev">正在积极研发中</div>
+                        </el-tab-pane>
+                        <el-tab-pane label="设置" name="setting">
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">视频存储:</span>
+                                </el-col>
+                                <el-col :span="18">
+                                    <el-input placeholder="请单击右侧按钮选择存储文件夹" v-model="config_save_dir" :readonly="true" ></el-input>
+                                </el-col>
+                                <el-col :span="2">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickOpenConfigDir">浏览</el-button>
+                                </el-col>
+                            </el-row>
+                            <br>
+                        </el-tab-pane>
+                    </el-tabs>
+                </el-main>
+            </el-container>
+        </template>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="start.js"></script>
+</body>
+
+</html>

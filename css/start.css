@@ -1,0 +1,284 @@
+html,body,head,body *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+    user-select:none;
+}
+
+html{
+    background-color:#f3f3f3;
+}
+
+html,body,#app,#app section,#app section .main{
+    height: 100%;
+    overflow: hidden;
+}
+
+.clearfix:before,
+.clearfix:after {
+    display: table;
+    content: "";
+}
+.clearfix:after {
+    clear: both
+}
+.el-dialog__body{
+    padding: 0px 20px !important;
+}
+.el-form-item{
+    margin-bottom: 5px !important;
+}
+.el-dialog__header{
+    margin: 10px 20px 5px !important;
+}
+
+
+.el-button{
+    padding: 12px 10px;
+}
+
+.el-header {
+    -webkit-app-region: drag;
+    padding:0 !important;
+    background-color:#009afb;
+    line-height: 40px;
+}
+
+.el-header .title{
+    margin-left: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    color: #f3f3f3;
+    margin-top: -6px;
+}
+
+.systemTool{
+    position: fixed;
+    right: 0;
+    top: 0;
+    margin-top: -6px;
+    margin-right: 0px;
+    -webkit-app-region: no-drag;
+}
+
+
+.systemTool .mylink{
+    color: #f3f3f3;
+    margin: 0 5px;
+    text-decoration: none;
+    font-size: 14px;
+}
+.systemTool .el-button{
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    color: #f3f3f3 !important;
+}
+.systemTool .el-button:hover{
+    background-color: #D71526;
+}
+.systemTool .button{
+    width: 30px;
+    height: 30px;
+    background-color: #00000000;
+    font-size: large;
+}
+
+.systemTool .el-button+.el-button{
+    margin-left: 0 !important;
+}
+
+.el-dropdown-link {
+    cursor: pointer;
+    color: #fff;
+}
+.el-dropdown-menu{
+    -webkit-app-region: no-drag;
+    margin-top: -5px !important;
+}
+
+.el-dropdown-menu .mylink{
+    color: #009afb;
+    margin: 5px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+
+.el-link.el-link--default:hover{
+    color: #f0f0f0 !important;
+}
+
+.main{
+    padding: 0px !important;
+}
+
+.main .el-tabs__header{
+    -webkit-app-region: drag;
+}
+
+.main .el-tabs,.main .el-tabs .el-tabs__content .el-tab-pane{
+    height:100%;
+}
+
+.main .el-tabs .el-tabs__content{
+    height: calc(100% - 40px);
+}
+
+.main .mybutton{
+    width: 100%;
+}
+
+/*
+.main .el-tabs,.main .el-tabs .el-tabs__content,.main .el-tabs .el-tabs__content .el-tab-pane,.main .el-tabs .el-tabs__content .el-tab-pane ul{
+    height: 100%;
+}
+
+.main .el-tabs .el-tabs__content{
+    overflow: auto;
+}
+*/
+
+.el-tabs--border-card{
+    border-width: 0px !important;
+    background-color:#00000000 !important;
+}
+.el-tabs--border-card>.el-tabs__header{
+    background-color: #009afb;
+    padding: 0 10px;
+}
+
+.el-tabs--border-card>.el-tabs__header .el-tabs__item{
+    color: white !important;
+    border-width: 0;
+    font-size: 16px;
+    -webkit-app-region: no-drag;
+}
+
+.el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active{
+    color:#009afb !important;
+    
+    background-color:#f3f3f3 !important;
+}
+
+.heisir .main .TaskList{
+    height: calc(100% - 70px);
+    margin: 0px auto;
+    padding: 10px;
+    overflow-y: auto;
+    border-radius: 0px;
+}
+.heisir .main .TaskList .item{
+    width: 100%;
+    height: 60px;
+    position: relative;
+    background: #00000000;
+    border-radius: 2px;
+    padding: 5px;
+    text-align: left;
+    margin: 0 0 10px 0;
+}
+
+.heisir .main .TaskList .item .m3u8{
+    width: 64px;
+    height:100%;
+    background-image: url(../icon/m3u8.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+.heisir .main .TaskList .item .link{
+    position: absolute;
+    left: 64px;
+    top: 5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 80%;
+}
+
+.heisir .main .TaskList .item .link input{
+    width: 100%;
+    height: 100%;
+    border: solid 0px ;
+    background: #00000000;
+}
+
+
+.heisir .main .TaskList .item .name{
+    position: absolute;
+    left: 64px;
+    bottom: 5px;
+    display:inline-block;
+}
+
+.heisir .main .TaskList .item .name .value{
+    position: absolute;
+    text-overflow: ellipsis !important;
+    width: 130px;
+    white-space: nowrap;
+    overflow: hidden !important;
+    display:inline-block;
+}
+
+.heisir .main .TaskList .item .time{
+    position: absolute;
+    left: 250px;
+    bottom: 5px;
+}
+.heisir .main .TaskList .item .status{
+    position: absolute;
+    left: 500px;
+    bottom: 5px;
+}
+.heisir .main .TaskList .item .opt{
+    position: absolute;
+    font-size: 15px;
+}
+
+.heisir .main .TaskList .item .opt.bottom{
+    right: 10px;
+    bottom: 5px;
+}
+
+.heisir .main .TaskList .item .opt.top{
+    right: 10px;
+    top: 5px;
+}
+
+.heisir .main .TaskList .item input[type=button]{
+    color: #fff;
+    background: #409EFF;
+    letter-spacing: 0px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 0px solid transparent;
+    padding: 2px 10px;
+    font-size: 14px;
+}
+.heisir .main .TaskList .empty{
+    width: 100%;
+    height: 100%;
+    color: white;
+    text-align: center;
+    box-sizing: border-box;
+    background: #409EFF;
+    font-size: xx-large;
+    display: table;
+}
+.heisir .main .TaskList .empty span{
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.heisir .main .tip-dev{
+    width: 100%;
+    height: 100%;
+    line-height: 5;
+    font-size: 96px;
+    text-align: center;
+    vertical-align: middle;
+    color: #409EFF;
+}

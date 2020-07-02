@@ -86,7 +86,12 @@
                                         <input class="StartStop" opt="StartOrStop" :data="o.id" type="button" value="停止" @click="clickItemOptData">
                                     </div>
                                 </li>
+                                <el-alert v-if="!allVideos.length" style="margin-top: 5%; height: 75%; line-height: 1;"
+                                    title="您还没有添加下载任务，在浏览器里嗅探到M3U8(HLS协议)视频流后，可以在这里缓存下载，快来试试吧。" 
+                                    type="success" effect="dark" :closable="false" :center="true" show-icon
+                                    ></el-alert>
                             </ul>
+                            
                             <!--
                             <el-dialog title="自定义设置" :visible.sync="dlg_header_visible" width="60%" :modal="true"
                                 :close-on-click-modal="false" :close-on-press-escape="false">
@@ -103,26 +108,34 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                             </el-dialog>
                             -->
                             <el-dialog title="新建下载任务" :visible.sync="dlg_newtask_visible" width="60%" :modal="true"
-                                :close-on-click-modal="false" :close-on-press-escape="false" :center="true">
-                                <el-form>
-                                    <el-form-item label="附加头" label-position="top">
-                                        <el-input type="textarea" :rows="4" placeholder="请输入一行一个Header，例如：
+                                :close-on-click-modal="false" :close-on-press-escape="false" :center="false">
+                                <el-form label-width="80px">
+                                    <el-form-item label="任务名" label-position="right">
+                                        <el-input type="text" placeholder="可空，填空会使用当前时间戳" v-model="taskName"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="附加头" label-position="right">
+                                        <el-input type="textarea" :rows="6" placeholder="请输入一行一个Header，例如：
 Origin: http://www.host.com
 Referer: http://www.host.com" v-model="headers"></el-input>
                                     </el-form-item>
-                                    <el-form-item label="使用自定义AES KEY和IV值解码 (32位KEY和32位IV值)" label-position="top">
-                                        <el-input type="text" placeholder="KEY和IV值(HEX格式)" v-model="myKeyIV"></el-input>
+                                    <el-form-item label="私有KEY" label-position="right">
+                                        <el-tooltip effect="light" placement="top-start">
+                                            <div slot="content">32位HEX格式KEY和32位IV值，IV值可空<br />示例：<br />ABABABABABBBBBBBABABABABABBBBBBBABABABABABBBBBBBABABABABABBBBBBB<br />或者：<br />ABABABABABBBBBBBABABABABABBBBBBB<br /></div>
+                                            <el-input type="text" placeholder="KEY和IV值(HEX格式)" v-model="myKeyIV"></el-input>
+                                        </el-tooltip>
                                     </el-form-item>
-                                    <el-form-item label="欲保存的文件夹名" label-position="top">
-                                        <el-input type="text" placeholder="可以为空" v-model="taskName"></el-input>
+                                    <el-form-item label="合并完成" label-position="right">
+                                        <el-checkbox v-model="taskIsDelTs" label="删除TS片段" border></el-checkbox>
                                     </el-form-item>
                                 </el-form>
                                 <div slot="footer" class="dialog-footer">
-                                    <el-button type="primary" @click="clickNewTaskOK">确 定</el-button>
+                                    <el-row :gutter="20">
+                                        <el-col :span="8" :offset="16">
+                                            <el-button type="primary" @click="clickNewTaskOK" style="width: 100%;">确 定</el-button>
+                                        </el-col>
+                                    </el-row>
                                 </div>
                             </el-dialog>
-
-
                         </el-tab-pane>
                         <el-tab-pane label="本地M3U8">
                             <div class="tip-dev">正在积极研发中</div>

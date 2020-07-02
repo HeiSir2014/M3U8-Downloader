@@ -13,6 +13,7 @@ const _app = new Vue({
             headers:'',
             myKeyIV:'',
             taskName:'',
+            taskIsDelTs:true,
             allVideos:[],
             tabPane:''
         }
@@ -36,7 +37,7 @@ const _app = new Vue({
                 that.notifyTaskStatus(data.code,data.message);
             });
             ipcRenderer.on('task-notify-create',function(event,data){
-                that.allVideos.push(data)
+                that.allVideos.splice(0,0,data);
             });
             ipcRenderer.on('task-notify-update',function(event,data){
                 for (let idx = 0; idx < that.allVideos.length; idx++) {
@@ -105,8 +106,13 @@ const _app = new Vue({
         },
         clickNewTaskOK:function(e){
             if( this.m3u8_url != '')
-            {                
-                ipcRenderer.send('task-add', this.m3u8_url , this.headers , this.myKeyIV , this.taskName );
+            {
+                ipcRenderer.send('task-add', { url: this.m3u8_url,
+                     headers: this.headers,
+                     myKeyIV: this.myKeyIV,
+                     taskName: this.taskName,
+                     taskIsDelTs:this.taskIsDelTs
+                     });
                 this.dlg_newtask_visible = false;
                 this.taskName = '';
             }

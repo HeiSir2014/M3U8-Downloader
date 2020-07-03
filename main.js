@@ -37,11 +37,16 @@ const referer = `https://tools.heisir.cn/M3U8Soft-Client?v=${package_self.versio
 
 const logger = winston.createLogger({
 	level: 'debug',
-	format: winston.format.simple(),
+	format: winston.format.combine(
+		winston.format.timestamp({
+			format: 'YYYY-MM-DD HH:mm:ss'
+		}),
+		winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`+(info.splat!==undefined?`${info.splat}`:" "))
+	),
 	transports: [
 		new winston.transports.Console(),
-		new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-		new winston.transports.File({ filename: 'logs/combined.log' }),
+		new winston.transports.File({ filename: path.join(globalConfigDir,'logs/error.log'), level: 'error' }),
+		new winston.transports.File({ filename: path.join(globalConfigDir,'logs/all.log') }),
 	],
 });
 
@@ -58,8 +63,12 @@ try {
 }
 
 
-process.on('uncaughtException',logger.error);
-process.on('unhandledRejection',logger.error);
+process.on('uncaughtException',(err, origin) =>{
+	logger.error(`uncaughtException: ${err} | ${origin}`)
+});
+process.on('unhandledRejection',(reason, promise) =>{
+	logger.error(`unhandledRejection: ${promise} | ${reason}`)
+});
 
 logger.info(`\n\n----- ${appInfo.name} | v${appInfo.version} | ${os.platform()} -----\n\n`)
 
@@ -74,7 +83,7 @@ function createWindow() {
 			nodeIntegration: true,
 			spellcheck: false
 		},
-		icon: path.join(__dirname, 'icon/logo.png'),
+		icon: path.join(__dirname, 'resource/icon/logo.png'),
 		alwaysOnTop: false,
 		hasShadow: false,
 	});
@@ -103,7 +112,7 @@ function createPlayerWindow(src) {
 			webPreferences: {
 				nodeIntegration: true
 			},
-			icon: path.join(__dirname, 'icon/logo.png'),
+			icon: path.join(__dirname, 'resource/icon/logo.png'),
 			alwaysOnTop: false,
 			hasShadow: false,
 			parent:mainWindow
@@ -145,7 +154,7 @@ async function checkUpdate(){
 }
 app.on('ready', () => {
 	createWindow();
-	tray = new Tray(path.join(__dirname, 'icon/logo.png'))
+	tray = new Tray(path.join(__dirname, 'resource/icon/logo.png'))
 	tray.setTitle(AppTitle);
 	tray.setToolTip(AppTitle);
 	tray.on("double-click",()=>{
@@ -180,9 +189,7 @@ app.on('ready', () => {
 
 	//百度统计代码
 	(async ()=>{
-
 		try {
-
 			checkUpdate();
 
 			setInterval(checkUpdate,600000);
@@ -195,7 +202,7 @@ app.on('ready', () => {
 				if(HMACCOUNT)
 				{
 					nconf.set('HMACCOUNT',HMACCOUNT);
-					nconf.save(logger.error);
+					nconf.save();
 				}
 				// fs.writeFileSync('tongji.ini',HMACCOUNT,{encoding:"utf-8",flag:"w"})
 			} catch (error_) {
@@ -209,7 +216,6 @@ app.on('ready', () => {
 		} catch (error) {
 			logger.error(error)
 		}
-	
 	})();
 });
 
@@ -262,6 +268,10 @@ ipcMain.on('get-version', function (event, arg) {
 ipcMain.on('get-all-videos', function (event, arg) {
 
     event.sender.send('get-all-videos-reply', configVideos);
+});
+
+ipcMain.on('open-log-dir', function (event, arg) {
+	showDirInExploer(path.join(globalConfigDir,'logs'))
 });
 
 ipcMain.on('task-add', async function (event, object) {
@@ -919,9 +929,11 @@ ipcMain.on('delvideo', function (event, id) {
 				if(fs.existsSync(Element.dir)) {
 					var files = fs.readdirSync(Element.dir)
 					files.forEach(e=>{
-						fs.unlinkSync(path.join(Element.dir,e) );
+						//fs.unlinkSync(path.join(Element.dir,e));
+						shell.moveItemToTrash(path.join(Element.dir,e))
 					})
-					fs.rmdirSync(Element.dir,{recursive :true})
+					//fs.rmdirSync(Element.dir,{recursive :true})
+					shell.moveItemToTrash(Element.dir)
 				}
 				var nIdx = configVideos.indexOf(Element);
 				if( nIdx > -1)
@@ -937,8 +949,24 @@ ipcMain.on('delvideo', function (event, id) {
 	});
 });
 
+function showDirInExploer(dir)
+{
+	shell.openExternal(dir).catch((reason)=>{
+		logger.error(`openExternal Error:${dir} ${reason}`);
+		
+		let files = fs.readdirSync(dir);
+		if(files && files.length > 0)
+		{
+			shell.showItemInFolder(path.join(dir,files[0]));
+		}
+		else{
+			shell.showItemInFolder(dir);
+		}
+	});
+}
+
 ipcMain.on('opendir', function (event, arg) {
-	shell.showItemInFolder(arg);
+	showDirInExploer(arg)
 });
 
 ipcMain.on('playvideo', function (event, arg) {
@@ -988,15 +1016,29 @@ ipcMain.on('open-config-dir', function (event, arg) {
 		defaultPath: SaveDir ? SaveDir : '',
 		properties: ['openDirectory','createDirectory'],
 	}).then(result => {
-		logger.debug(`选择目录 ${result.filePaths}`);
 		if(!result.canceled && result.filePaths.length == 1)
 		{
+			logger.debug(`选择目录 ${result.filePaths}`);
 			globalConfigSaveVideoDir = result.filePaths[0];
 			nconf.set('SaveVideoDir',globalConfigSaveVideoDir);
-			nconf.save(logger.error);
+			nconf.save();
 			event.sender.send("get-config-dir-reply",globalConfigSaveVideoDir);
 		}
 	}).catch(err => {
-		logger.error(err)
-	})
+		logger.error(`showOpenDialog ${err}`)
+	});
+});
+
+ipcMain.on('open-select-m3u8', function (event, arg) {
+	dialog.showOpenDialog(mainWindow, {
+		title:"请选择一个M3U8文件",
+		properties: ['openFile'],
+	}).then(result => {
+		if(!result.canceled && result.filePaths.length == 1)
+		{
+			event.sender.send("open-select-m3u8-reply",`file:///${result.filePaths[0]}`);
+		}
+	}).catch(err => {
+		logger.error(`showOpenDialog ${err}`)
+	});
 });

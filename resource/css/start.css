@@ -314,4 +314,5 @@ html,body,#app,#app section,#app section .main{
     overflow: auto !important;
     padding-left: 50px !important;
     padding-right: 10px !important;
+    height: calc(100% - 60px) !important;
 }

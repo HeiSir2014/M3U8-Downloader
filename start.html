@@ -22,7 +22,7 @@
 
                     <div class="systemTool">
                         <el-dropdown trigger="click">
-                            <span class="el-dropdown-link">帮助</span>
+                            <span class="el-dropdown-link">关于</span>
                             <el-dropdown-menu slot="dropdown">
                                 <el-dropdown-item icon="el-icon-link">
                                     <a class="mylink" href="https://tools.heisir.cn/HLSDownload/"
@@ -202,7 +202,7 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                                     <el-checkbox v-model="taskIsDelTs" label="删除TS片段"></el-checkbox>
                                 </el-form-item>
                                 <el-form-item>
-                                    <el-button class="mybutton" type="primary" @click="">批量下载</el-button>
+                                    <el-button class="mybutton" type="primary" @click="clickNewTaskMuti">批量下载</el-button>
                                 </el-form-item>
                             </el-form>
                         </el-tab-pane>
@@ -297,11 +297,7 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                                 </el-alert>
                                 </el-col>
                             </el-row>
-                            <el-row :gutter="8">
-                                <el-col :span="24">
-                                    <section id="comments" class="vcomment"></section>
-                                </el-col>    
-                            </el-row>
+                            <section id="comments" class="vcomment"></section>
                         </el-tab-pane>
                         <el-tab-pane label="设置" name="setting">
                             <el-row :gutter="8">

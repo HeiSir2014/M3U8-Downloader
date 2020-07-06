@@ -4,6 +4,9 @@ M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视
 | 功能 | 支持 |
 | :-- | --: |
 | HLS协议点播源 | ✓ |
+| 自定义Http协议头下载 | ✓ |
+| 自定义KEY和IV解密 | ✓ |
+| 本地M3U8文件下载 | ✓ |
 | HLS协议直播源 | ✓ |
 | 标准 AES-128-CBC加密 | ✓ |
 | 标准 AES-196-CBC加密 | ✓ |
@@ -13,7 +16,18 @@ M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视
 
 <div align="center">
 	<br>
-	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/M3U82.0.png?raw=true" alt="M3U8-Downloader">
+	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-3-1.gif?raw=true" alt="M3U8-Downloader">
+	<br>
+</div>
+<div align="center">
+	<br>
+	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-3-2.gif?raw=true" alt="M3U8-Downloader">
+	<br>
+</div>
+
+<div align="center">
+	<br>
+	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-4.gif?raw=true" alt="M3U8-Downloader">
 	<br>
 </div>
 

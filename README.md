@@ -13,7 +13,7 @@ M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视
 
 <div align="center">
 	<br>
-	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-2.gif?raw=true" alt="M3U8-Downloader">
+	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/M3U82.0.png?raw=true" alt="M3U8-Downloader">
 	<br>
 </div>
 

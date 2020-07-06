@@ -90,7 +90,7 @@ function createWindow() {
 	mainWindow.setMenu(null)
 	// 加载index.html文件
 	mainWindow.loadFile( path.join(__dirname, 'start.html') );
-	mainWindow.openDevTools();
+	//mainWindow.openDevTools();
 	// 当 window 被关闭，这个事件会被触发。
 	mainWindow.on('closed', () => {
 		// 取消引用 window 对象，如果你的应用支持多窗口的话，
@@ -204,7 +204,6 @@ app.on('ready', () => {
 					nconf.set('HMACCOUNT',HMACCOUNT);
 					nconf.save();
 				}
-				// fs.writeFileSync('tongji.ini',HMACCOUNT,{encoding:"utf-8",flag:"w"})
 			} catch (error_) {
 				logger.error(error_)
 			}
@@ -292,55 +291,139 @@ ipcMain.on('task-add', async function (event, object) {
 	if(mes && mes.length >= 1)
 	{
 		_hosts = mes[0];
+
+		if(_headers['Origin'] == null && _headers['origin'] == null)
+		{
+			_headers['Origin'] = _hosts;
+		}
+		if(_headers['Referer'] == null && _headers['referer'] == null)
+		{
+			_headers['Referer'] = _hosts;
+		}
 	}
 
-	if(_headers['Origin'] == null && _headers['origin'] == null)
-	{
-		_headers['Origin'] = _hosts;
-	}
-	if(_headers['Referer'] == null && _headers['referer'] == null)
-	{
-		_headers['Referer'] = _hosts;
-	}
 	object.headers = _headers;
 
-	const response = await got(hlsSrc,{headers:_headers,timeout:httpTimeout}).catch(logger.error);
+	let info = '解析资源失败！';
+	let code = -1;
+
+	let parser = new Parser();
+	if(/^file:\/\/\//g.test(hlsSrc))
 	{
-		let info = '';
-		let code = 0;
-		code = -1;
-		info = '解析资源失败！';
-		if (response && response.body != null
-			&& response.body != '')
+		parser.push(fs.readFileSync(hlsSrc.replace(/^file:\/\/\//g,'')));
+		parser.end();
+	}
+	else{
+		const response = await got(hlsSrc,{headers:_headers,timeout:httpTimeout}).catch(logger.error);
 		{
-			let parser = new Parser();
-			parser.push(response.body);
-			parser.end();
-			let count_seg = parser.manifest.segments.length;
-			if (count_seg > 0) {
-				code = 0;
-				if (parser.manifest.endList) {
-					let duration = 0;
-					parser.manifest.segments.forEach(segment => {
-						duration += segment.duration;
-					});
-					info = `点播资源解析成功，有 ${count_seg} 个片段，时长：${formatTime(duration)}，即将开始缓存...`;
-					startDownload(object);
-				}
-				else {
-					info = `直播资源解析成功，即将开始缓存...`;
-					startDownloadLive(object);
-				}
+			if (response && response.body != null
+				&& response.body != '')
+			{
+				parser.push(response.body);
+				parser.end();
 			}
 		}
-		event.sender.send('task-add-reply', { code: code, message: info });
 	}
+
+	let count_seg = parser.manifest.segments.length;
+	if (count_seg > 0) {
+		code = 0;
+		if (parser.manifest.endList) {
+			let duration = 0;
+			parser.manifest.segments.forEach(segment => {
+				duration += segment.duration;
+			});
+			info = `点播资源解析成功，有 ${count_seg} 个片段，时长：${formatTime(duration)}，即将开始缓存...`;
+			startDownload(object);
+		}
+		else {
+			info = `直播资源解析成功，即将开始缓存...`;
+			startDownloadLive(object);
+		}
+	}
+	event.sender.send('task-add-reply', { code: code, message: info });
 });
+
+
+ipcMain.on('task-add-muti', async function (event, object) {
+	logger.info(object);
+	let m3u8_urls = object.m3u8_urls;
+	let _headers = {};
+	if(object.headers)
+	{
+		let __ = object.headers.match(/(.*?): ?(.*?)(\n|\r|$)/g);
+		__ && __.forEach((_)=>{
+			let ___ = _.match(/(.*?): ?(.*?)(\n|\r|$)/i);
+			___ && (_headers[___[1]] = ___[2]);
+		});
+	}
+
+	let mes = hlsSrc.match(/^https?:\/\/[^/]*/);
+	let _hosts = '';
+	if(mes && mes.length >= 1)
+	{
+		_hosts = mes[0];
+
+		if(_headers['Origin'] == null && _headers['origin'] == null)
+		{
+			_headers['Origin'] = _hosts;
+		}
+		if(_headers['Referer'] == null && _headers['referer'] == null)
+		{
+			_headers['Referer'] = _hosts;
+		}
+	}
+
+
+
+	object.headers = _headers;
+
+	let info = '解析资源失败！';
+	let code = -1;
+
+	m3u8_urls.split(/\r|\n/g).forEach( urls=>{
+		if(urls != '')
+		{
+			let _obj = { url: '',
+				headers: object.headers,
+				myKeyIV: '',
+				taskName: '',
+				taskIsDelTs:object.taskIsDelTs,
+				url_prefix:''
+		   };
+			if(/-{4}/.test(urls))
+			{
+				let __ = urls.split('----');
+				if(__ && __.length >= 2)
+				{
+					if(__[0])
+					{
+						_obj.url = __[0];
+						if(__[1])
+						{
+							_obj.taskName = __[1];
+						}
+						startDownload(_obj);
+					}
+				}
+			}
+			else{
+				_obj.url = urls;
+				startDownload(_obj);
+			}
+		}
+	})
+	info = `批量添加成功，正在下载...`;
+	event.sender.send('task-add-reply', { code: code, message: info });
+});
+
+
 
 class QueueObject {
 	constructor() {
 		this.segment = null;
 		this.url = '';
+		this.url_prefix = '';
 		this.headers = '';
 		this.myKeyIv = '';
 		this.id = 0;
@@ -369,7 +452,7 @@ class QueueObject {
 			if (/^http.*/.test(segment.uri)) {
 				uri_ts = segment.uri;
 			}
-			else if(/^\/.*/.test(segment.uri))
+			else if(/^http.*/.test(this.url)  &&  /^\/.*/.test(segment.uri))
 			{
 				let mes = this.url.match(/^https?:\/\/[^/]*/);
 				if(mes && mes.length >= 1)
@@ -378,13 +461,37 @@ class QueueObject {
 				}
 				else
 				{
-					uri_ts = partent_uri + segment.uri;
+					uri_ts = partent_uri + "/" + segment.uri;
 				}
 			}
-			else
+			else if(/^http.*/.test(this.url))
 			{
-				uri_ts = partent_uri + segment.uri;
+				uri_ts = partent_uri + "/" + segment.uri;
 			}
+			else if(/^file:\/\/\//.test(this.url) && !this.url_prefix )
+			{
+				let fileDir = this.url.replace('file:///','').replace(/[^\\/]{1,}$/,'');
+				uri_ts = path.join(fileDir,segment.uri);
+				if(!fs.existsSync(uri_ts))
+				{
+					var me = segment.uri.match(/[^\\\/\?]{1,}\?|$/i);
+					if(me && me.length > 1){
+						uri_ts = path.join(fileDir,me[0].replace(/\?$/,'')); 
+					}
+					if(!fs.existsSync(uri_ts))
+					{
+						globalCond[this.id] = false;
+						this.catch && this.catch();
+						return;
+					}
+				}
+				uri_ts = "file:///" + uri_ts
+			}
+			else if(/^file:\/\/\//.test(this.url) && this.url_prefix )
+			{
+				uri_ts = this.url_prefix + "/" + segment.uri;
+			}
+
 			let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
 			let filpath = path.join(this.dir, filename);
 			let filpath_dl = path.join(this.dir, filename+".dl");
@@ -395,11 +502,17 @@ class QueueObject {
 			for (let index = 0; index < 3 && !fs.existsSync(filpath); index++) {
 				// 下载的时候使用.dl后缀的文件名，下载完成后重命名
 				let that = this;
-				await download (uri_ts, that.dir, {filename:filename + ".dl",timeout:httpTimeout,headers:that.headers}).catch((err)=>{
-					logger.error(err)
-					if(fs.existsSync(filpath_dl)) fs.unlinkSync( filpath_dl);
-				});
 
+				if(/^file:\/\/\//.test(uri_ts))
+				{
+					fs.copyFileSync(uri_ts.replace(/^file:\/\/\//,''),filpath_dl);
+				}
+				else{
+					await download (uri_ts, that.dir, {filename:filename + ".dl",timeout:httpTimeout,headers:that.headers}).catch((err)=>{
+						logger.error(err)
+						if(fs.existsSync(filpath_dl)) fs.unlinkSync( filpath_dl);
+					});
+				}
 				if(!fs.existsSync(filpath_dl)) continue;
 				if( fs.statSync(filpath_dl).size <= 0 )
 				{
@@ -505,6 +618,7 @@ function queue_callback(that,callback)
 async function startDownload(object) {
 	let id = !object.id ? new Date().getTime():object.id;
 	let headers = object.headers;
+	let url_prefix = object.url_prefix;
 	let taskName = object.taskName;
 	let myKeyIv = object.myKeyIv;
 	let url = object.url;
@@ -518,21 +632,28 @@ async function startDownload(object) {
 		dir = path.join(globalConfigSaveVideoDir, taskName)
 	}
 	logger.info(dir);
-	let filesegments = [];
 
 	if(!fs.existsSync(dir))
 	{
 		fs.mkdirSync(dir, { recursive: true });
 	}
 
-	const response = await got(url,{headers:headers,timeout:httpTimeout}).catch(logger.error);
-	if(response == null || response.body == null || response.body == '')
-	{
-		return;
-	}
 	let parser = new Parser();
-	parser.push(response.body);
-	parser.end();
+	if(/^file:\/\/\//g.test(url))
+	{
+		parser.push(fs.readFileSync(url.replace(/^file:\/\/\//,'')));
+		parser.end();
+	}
+	else{
+		const response = await got(url,{headers:headers,timeout:httpTimeout}).catch(logger.error);
+		if(response == null || response.body == null || response.body == '')
+		{
+			return;
+		}
+		parser.push(response.body);
+		parser.end();
+	}
+
 
 	//并发 2 个线程下载
 	var tsQueues = async.queue(queue_callback, 2 );
@@ -542,6 +663,7 @@ async function startDownload(object) {
 	var video = {
 		id:id,
 		url:url,
+		url_prefix:url_prefix,
 		dir:dir,
 		segment_total:count_seg,
 		segment_downloaded:count_downloaded,
@@ -571,6 +693,7 @@ async function startDownload(object) {
 		qo.idx = iSeg;
 		qo.id = id;
 		qo.url = url;
+		qo.url_prefix = url_prefix;
 		qo.headers = headers;
 		qo.myKeyIv = myKeyIv;
 		qo.segment = segments[iSeg];
@@ -612,10 +735,22 @@ async function startDownload(object) {
 		mainWindow.webContents.send('task-notify-end',video);
 		let indexData = '';
 		
+		let filesegments = [];
 		for (let iSeg = 0; iSeg < segments.length; iSeg++) {
 			let filpath = path.join(dir, `${ ((iSeg + 1) +'').padStart(6,'0') }.ts`);
-			indexData += `file '${filpath}'\r\n`;
-			filesegments.push(filpath);
+			if(fs.existsSync(filpath))
+			{
+				indexData += `file '${filpath}'\r\n`;
+				filesegments.push(filpath);
+			}
+		}
+		if(filesegments.length <= 0)
+		{
+			video.status = "下载失败，请检查链接有效性";
+			mainWindow.webContents.send('task-notify-end',video);
+
+			logger.error(`[${url}] 下载失败，请检查链接有效性`);
+			return;
 		}
 		fs.writeFileSync(path.join(dir,'index.txt'),indexData);
 		let outPathMP4 = path.join(dir,id+'.mp4');
@@ -1041,4 +1176,123 @@ ipcMain.on('open-select-m3u8', function (event, arg) {
 	}).catch(err => {
 		logger.error(`showOpenDialog ${err}`)
 	});
+});
+
+ipcMain.on('open-select-ts-dir', function (event, arg) {
+	if(arg)
+	{
+		let files = [];
+		try {
+			files = fs.readdirSync(result.filePaths[0])
+		} catch (error) {
+			
+		}
+		if(files && files.length > 0)
+		{
+			let _files = files.filter((f)=>{
+				return f.endsWith('.ts') || f.endsWith('.TS')
+			});
+			if(_files.length)
+			{
+				event.sender.send("open-select-ts-select-reply", _files);
+				return;
+			}
+		}
+		return;
+	}
+	dialog.showOpenDialog(mainWindow, {
+		title:"请选择欲合并的TS文件",
+		properties: ['openFile','multiSelections'],
+		filters:[{name: '视频片段', extensions: ['ts']},{name: '所有文件', extensions: ['*']}]
+	}).then(result => {
+		if(!result.canceled && result.filePaths.length >= 1)
+		{
+			if(result.filePaths.length == 1)
+			{
+				event.sender.send("open-select-ts-dir-reply", result.filePaths[0]);
+
+				let files = [];
+				try {
+					files = fs.readdirSync(result.filePaths[0])
+				} catch (error) {
+					
+				}
+				if(files && files.length > 0)
+				{
+					let _files = files.filter((f)=>{
+						return f.endsWith('.ts') || f.endsWith('.TS')
+					});
+					if(_files.length)
+					{
+						event.sender.send("open-select-ts-select-reply", _files);
+						return;
+					}
+				}
+			}
+			let _files = result.filePaths.filter((f)=>{
+				return f.endsWith('.ts') || f.endsWith('.TS')
+			});
+			_files.length && event.sender.send("open-select-ts-select-reply", _files);
+		}
+	}).catch(err => {
+		logger.error(`showOpenDialog ${err}`)
+	});
+});
+
+ipcMain.on('start-merge-ts', async function (event, task) {
+	if( !task ) return
+	let name = task.name ? task.name : (new Date().getTime()+'');
+
+	let dir = path.join(globalConfigSaveVideoDir,name);
+	if(!fs.existsSync(dir))
+	{
+		fs.mkdirSync(dir, { recursive: true });
+	}
+	let outPathMP4 = path.join(dir,`${new Date().getTime()}.mp4`);
+
+	let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
+	if(!fs.existsSync(ffmpegBin))
+	{
+		ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
+	}
+	if(fs.existsSync(ffmpegBin))
+	{
+		mainWindow.webContents.send('start-merge-ts-status',{code:0,progress:1,status:'开始合并...'});
+		ffmpegInputStream = new FFmpegStreamReadable(null);
+
+		let ffmpegObj = new ffmpeg(ffmpegInputStream)
+		.setFfmpegPath(ffmpegBin)
+		.videoCodec(task.mergeType == 'speed'?'copy':'libx264')
+		.audioCodec('copy')
+		.format('mp4')
+		.save(outPathMP4)
+		.on('error', (error)=>{
+			logger.error(error)
+			mainWindow.webContents.send('start-merge-ts-status',{code:-2,progress:100,status:'合并出错|'+error});
+		})
+		.on('end', function(){
+			logger.info(`${outPathMP4} merge finished.`)
+			mainWindow.webContents.send('start-merge-ts-status',{code:1,progress:100,status:'success',dir:dir,path:outPathMP4});
+		})
+		.on('progress', (info)=>{
+			logger.info(JSON.stringify(info));
+			mainWindow.webContents.send('start-merge-ts-status',{code:0,progress:-1,status:JSON.stringify(info)});
+		});
+		let count = task.ts_files.length
+		let _last = '';
+		for (let index = 0; index < count; index++) {
+			const file = task.ts_files[index];
+			ffmpegInputStream.push(fs.readFileSync(file));
+			while(ffmpegInputStream._readableState.length > 0)
+			{
+				await sleep(200);
+			}
+			let precent = Number.parseInt((index+1)*100/count);
+			mainWindow.webContents.send('start-merge-ts-status',{code:0,progress:precent,status:`合并中...[${precent}%]`});
+		}
+		ffmpegInputStream.push(null);
+	}
+	else{
+		mainWindow.webContents.send('start-merge-ts-status',{code:-1,progress:100,status:'未检测到FFMPEG,不进行合并操作。'});
+	}
 });

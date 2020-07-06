@@ -1,6 +1,6 @@
 {
   "name": "m3u8-downloader",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "hls 下载器，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -25,8 +25,8 @@
     "copyffmpeg": "xcopy /D /E /I /F /Y .\\ffmpeg.exe ..\\dist\\m3u8-downloader-win32-x64",
     "start": "electron .",
     "start2": "electron .",
-    "del": " rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\resource &&  rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\css && rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\js &&  rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\icon &&  rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\node_modules &&  rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\logs",
-    "package": "electron-packager . m3u8-downloader --platform=win32 --arch=x64 -unpack=ffmpeg.exe --icon=.\\resource\\icon\\logo.ico --out ../dist --electron-version=9.0.5 --overwrite && npm run copyffmpeg && npm run del"
+    "del": " rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\resource &&  rmdir /S /Q ..\\dist\\m3u8-downloader-win32-x64\\node_modules",
+    "package": "electron-packager . m3u8-downloader --platform=win32 --arch=x64 -unpack=ffmpeg.exe --icon=.\\resource\\icon\\logo.ico --out ../dist --electron-version=9.0.5 --overwrite  && npm run del"
   },
   "author": "heisir qq:1586462",
   "license": "ISC"

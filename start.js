@@ -150,6 +150,12 @@ const _app = new Vue({
             }
         },
         clickNewTaskMuti:function(e){
+            if(!this.config_save_dir)
+            {
+                this.tabPane = "setting";
+                this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
+                return;
+            }
             if( this.m3u8_urls != '')
             {
                 ipcRenderer.send('task-add-muti', { m3u8_urls: this.m3u8_urls,
@@ -191,6 +197,12 @@ const _app = new Vue({
             ipcRenderer.send('open-select-ts-dir');
         },
         clickStartMergeTS:function(e){
+            if(!this.config_save_dir)
+            {
+                this.tabPane = "setting";
+                this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
+                return;
+            }
             ipcRenderer.send('start-merge-ts',{
                 ts_files:this.ts_urls,
                 mergeType:this.tsMergeType,

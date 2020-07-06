@@ -358,25 +358,7 @@ ipcMain.on('task-add-muti', async function (event, object) {
 		});
 	}
 
-	let mes = hlsSrc.match(/^https?:\/\/[^/]*/);
-	let _hosts = '';
-	if(mes && mes.length >= 1)
-	{
-		_hosts = mes[0];
 
-		if(_headers['Origin'] == null && _headers['origin'] == null)
-		{
-			_headers['Origin'] = _hosts;
-		}
-		if(_headers['Referer'] == null && _headers['referer'] == null)
-		{
-			_headers['Referer'] = _hosts;
-		}
-	}
-
-
-
-	object.headers = _headers;
 
 	let info = '解析资源失败！';
 	let code = -1;
@@ -403,18 +385,39 @@ ipcMain.on('task-add-muti', async function (event, object) {
 						{
 							_obj.taskName = __[1];
 						}
-						startDownload(_obj);
 					}
 				}
 			}
 			else{
 				_obj.url = urls;
+			}
+
+			if(_obj.url){
+				
+				let mes = _obj.url.match(/^https?:\/\/[^/]*/);
+				let _hosts = '';
+				if(mes && mes.length >= 1)
+				{
+					_hosts = mes[0];
+
+					if(_headers['Origin'] == null && _headers['origin'] == null)
+					{
+						_headers['Origin'] = _hosts;
+					}
+					if(_headers['Referer'] == null && _headers['referer'] == null)
+					{
+						_headers['Referer'] = _hosts;
+					}
+				}
+
+				_obj.headers = _headers;
+
 				startDownload(_obj);
 			}
 		}
 	})
 	info = `批量添加成功，正在下载...`;
-	event.sender.send('task-add-reply', { code: code, message: info });
+	event.sender.send('task-add-reply', { code: 0, message: info });
 });
 
 
@@ -452,7 +455,7 @@ class QueueObject {
 			if (/^http.*/.test(segment.uri)) {
 				uri_ts = segment.uri;
 			}
-			else if(/^http.*/.test(this.url)  &&  /^\/.*/.test(segment.uri))
+			else if(/^http/.test(this.url)  &&  /^\/.*/.test(segment.uri))
 			{
 				let mes = this.url.match(/^https?:\/\/[^/]*/);
 				if(mes && mes.length >= 1)
@@ -461,12 +464,12 @@ class QueueObject {
 				}
 				else
 				{
-					uri_ts = partent_uri + "/" + segment.uri;
+					uri_ts = partent_uri + (partent_uri.endsWith('/') || segment.uri.startWith('/') ?'':"/") + segment.uri;
 				}
 			}
 			else if(/^http.*/.test(this.url))
 			{
-				uri_ts = partent_uri + "/" + segment.uri;
+				uri_ts = partent_uri + (partent_uri.endsWith('/') || segment.uri.startWith('/') ?'':"/") + segment.uri;
 			}
 			else if(/^file:\/\/\//.test(this.url) && !this.url_prefix )
 			{
@@ -489,7 +492,7 @@ class QueueObject {
 			}
 			else if(/^file:\/\/\//.test(this.url) && this.url_prefix )
 			{
-				uri_ts = this.url_prefix + "/" + segment.uri;
+				uri_ts = this.url_prefix + (this.url_prefix.endsWith('/') || segment.uri.startWith('/') ?'':"/") + segment.uri;
 			}
 
 			let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;

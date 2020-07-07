@@ -140,10 +140,12 @@ async function checkUpdate(){
 			let _package = JSON.parse(body);
 			if(_package.version != package_self.version)
 			{
+				
+
+
 				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
 				{
 					shell.openExternal("https://tools.heisir.cn/HLSDownload/");
-					
 					return;
 				}
 			}
@@ -153,6 +155,9 @@ async function checkUpdate(){
 	}
 }
 app.on('ready', () => {
+
+
+
 	createWindow();
 	tray = new Tray(path.join(__dirname, 'resource/icon/logo.png'))
 	tray.setTitle(AppTitle);
@@ -526,7 +531,7 @@ class QueueObject {
 				{
 					//标准解密TS流
 					let aes_path = path.join(this.dir, "aes.key" );
-					if( !myKeyIv && !fs.existsSync( aes_path ))
+					if( !this.myKeyIv && !fs.existsSync( aes_path ))
 					{
 						let key_uri = segment.key.uri;
 						if (! /^http.*/.test(segment.key.uri)) {
@@ -547,12 +552,12 @@ class QueueObject {
 
 						await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout}).catch(console.error);
 					}
-					if(myKeyIv || fs.existsSync( aes_path ))
+					if(this.myKeyIv || fs.existsSync( aes_path ))
 					{
 						try {
 							let key_ =null;
 							let iv_ =null;
-							if(!myKeyIv)
+							if(!this.myKeyIv)
 							{
 								key_ = fs.readFileSync( aes_path );
 								iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
@@ -560,10 +565,10 @@ class QueueObject {
 							}
 							else{
 								
-								key_ = Buffer.from(myKeyIv.substr(0,32),'hex' );
-								if(myKeyIv.length >= 64)
+								key_ = Buffer.from(this.myKeyIv.substr(0,32),'hex' );
+								if(this.myKeyIv.length >= 64)
 								{
-									iv_ = Buffer.from(myKeyIv.substr(myKeyIv.length - 32,32),'hex' );
+									iv_ = Buffer.from(this.myKeyIv.substr(this.myKeyIv.length - 32,32),'hex' );
 								}
 								else{
 									iv_ = Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' )
@@ -634,6 +639,7 @@ async function startDownload(object) {
 	{
 		dir = path.join(globalConfigSaveVideoDir, taskName)
 	}
+	
 	logger.info(dir);
 
 	if(!fs.existsSync(dir))
@@ -659,7 +665,7 @@ async function startDownload(object) {
 
 
 	//并发 2 个线程下载
-	var tsQueues = async.queue(queue_callback, 2 );
+	var tsQueues = async.queue(queue_callback, 5);
 
 	let count_seg = parser.manifest.segments.length;
 	let count_downloaded = 0;

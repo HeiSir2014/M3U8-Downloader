@@ -47,7 +47,7 @@
       "!node_modules/ffmpeg-static/ffmpeg",
       "!node_modules/ffmpeg-static/ffmpeg.ffmpeg"
     ],
-    "asar":true,
+    "asar": true,
     "win": {
       "target": [
         "dir",
@@ -69,7 +69,7 @@
       "extraResources": [
         {
           "from": "node_modules/ffmpeg-static/ffmpeg",
-          "to": "ffmpeg"
+          "to": "node_modules/ffmpeg-static/ffmpeg"
         }
       ],
       "icon": "resource/icon/logo.icns"

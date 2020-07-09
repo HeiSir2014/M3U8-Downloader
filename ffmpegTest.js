@@ -5,6 +5,7 @@ const { Readable} = require('stream');
 const path = require('path');
 const got = require('got');
 const { default: async } = require('async');
+const ffmpegPath = require('ffmpeg-static');
 
 
 (async ()=>{
@@ -13,9 +14,9 @@ const { default: async } = require('async');
     console.log(respose.headers['content-length'])
     console.log(respose.body.length)
     console.log(respose.error);
-})();
+});
     
-
+console.log(ffmpegPath)
 /*
 
 const dir = 'E:\\Project\\my_project\\M3U8-Downloader\\source\\download\\1592447619950\\';

@@ -1,5 +1,6 @@
 const os = require('os')
 const { app, BrowserWindow, Tray, ipcMain, shell,Menu,dialog } = require('electron');
+const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const path = require('path');
 const { Parser } = require('m3u8-parser');
@@ -16,12 +17,17 @@ const appInfo = package_self;
 const winston = require('winston');
 const nconf = require('nconf');
 const { dir } = require('console');
+let ffmpegPath = require('ffmpeg-static');
+
+if(!isDev){
+	ffmpegPath = ffmpegPath.replace('app.asar/','').replace('app.asar\\','');
+}
 
 let isdelts = true;
 let mainWindow = null;
 let playerWindow = null;
 let tray = null;
-let AppTitle = 'HLS Downloader'
+let AppTitle = 'M3U8-Downloader'
 let firstHide = true;
 
 var configVideos = [];
@@ -81,7 +87,8 @@ function createWindow() {
 		transparent: false, frame: false, resizable: true,
 		webPreferences: {
 			nodeIntegration: true,
-			spellcheck: false
+			spellcheck: false,
+			webSecurity:!isDev
 		},
 		icon: path.join(__dirname, 'resource/icon/logo.png'),
 		alwaysOnTop: false,
@@ -90,7 +97,7 @@ function createWindow() {
 	mainWindow.setMenu(null)
 	// 加载index.html文件
 	mainWindow.loadFile( path.join(__dirname, 'start.html') );
-	//mainWindow.openDevTools();
+	isDev && mainWindow.openDevTools();
 	// 当 window 被关闭，这个事件会被触发。
 	mainWindow.on('closed', () => {
 		// 取消引用 window 对象，如果你的应用支持多窗口的话，
@@ -98,7 +105,8 @@ function createWindow() {
 		// 与此同时，你应该删除相应的元素。
 		mainWindow = null;
 
-	})
+	});
+	
 }
 function createPlayerWindow(src) {
 	if(playerWindow == null)
@@ -140,9 +148,6 @@ async function checkUpdate(){
 			let _package = JSON.parse(body);
 			if(_package.version != package_self.version)
 			{
-				
-
-
 				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
 				{
 					shell.openExternal("https://tools.heisir.cn/HLSDownload/");
@@ -156,8 +161,6 @@ async function checkUpdate(){
 }
 app.on('ready', () => {
 
-
-
 	createWindow();
 	tray = new Tray(path.join(__dirname, 'resource/icon/logo.png'))
 	tray.setTitle(AppTitle);
@@ -170,18 +173,28 @@ app.on('ready', () => {
 		mainWindow.show();
 	});
 	const contextMenu = Menu.buildFromTemplate([
-		{ label: '显示窗口', type: 'normal',click:()=>{
-			mainWindow.show();
-		}},
-		{ label: '退出', type: 'normal' ,click:()=>{
-			if(playerWindow)
-			{
-				playerWindow.close();
+		{
+			label: '显示窗口',
+			type: 'normal',
+			click: () => {
+				mainWindow.show();
 			}
-			mainWindow.close();
-			app.quit()
-	}}
-	  ])
+		},
+		{
+			type:'separator'
+		},
+		{
+			label: '退出',
+			type: 'normal',
+			click: () => {
+				if (playerWindow) {
+					playerWindow.close();
+				}
+				mainWindow.close();
+				app.quit()
+			}
+		}
+	]);
 	tray.setContextMenu(contextMenu);
     try {
         configVideos = JSON.parse(fs.readFileSync(globalConfigVideoPath));
@@ -246,6 +259,9 @@ app.on('activate', () => {
 	// 通常在应用程序中重新创建一个窗口。
 	if (mainWindow === null) {
 		createWindow()
+	}
+	else{
+		mainWindow.show();
 	}
 })
 
@@ -768,9 +784,9 @@ async function startDownload(object) {
 		{
 			ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
 		}
-		if(fs.existsSync(ffmpegBin))
+		if(fs.existsSync(ffmpegPath))
 		{
-			var p = spawn(ffmpegBin,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy","-f","mp4",`${outPathMP4}`]);
+			var p = spawn(ffmpegPath,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy","-f","mp4",`${outPathMP4}`]);
 			p.on("close",()=>{
 				if(fs.existsSync(outPathMP4))
 				{
@@ -969,17 +985,12 @@ async function startDownloadLive(object) {
 									outPathMP4  = path.join(dir,newid+'.mp4');
 									newid = newid + 1;
 								}
-								let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
-								if(!fs.existsSync(ffmpegBin))
-								{
-									ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
-								}
-								if(fs.existsSync(ffmpegBin))
+								if(fs.existsSync(ffmpegPath))
 								{
 									ffmpegInputStream = new FFmpegStreamReadable(null);
 
 									ffmpegObj = new ffmpeg(ffmpegInputStream)
-									.setFfmpegPath(ffmpegBin)
+									.setFfmpegPath(ffmpegPath)
 									.videoCodec('copy')
 									.audioCodec('copy')
 									.save(outPathMP4)
@@ -1149,7 +1160,10 @@ ipcMain.on('setting_isdelts', function (event, arg) {
 });
 
 ipcMain.on('get-config-dir', function (event, arg) {
-	event.sender.send("get-config-dir-reply",globalConfigSaveVideoDir);
+	event.sender.send("get-config-dir-reply",{
+		config_save_dir:globalConfigSaveVideoDir,
+		config_ffmpeg:ffmpegPath
+	});
 })
 
 ipcMain.on('open-config-dir', function (event, arg) {
@@ -1259,18 +1273,13 @@ ipcMain.on('start-merge-ts', async function (event, task) {
 	}
 	let outPathMP4 = path.join(dir,`${new Date().getTime()}.mp4`);
 
-	let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
-	if(!fs.existsSync(ffmpegBin))
-	{
-		ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
-	}
-	if(fs.existsSync(ffmpegBin))
+	if(fs.existsSync(ffmpegPath))
 	{
 		mainWindow.webContents.send('start-merge-ts-status',{code:0,progress:1,status:'开始合并...'});
 		ffmpegInputStream = new FFmpegStreamReadable(null);
 
 		let ffmpegObj = new ffmpeg(ffmpegInputStream)
-		.setFfmpegPath(ffmpegBin)
+		.setFfmpegPath(ffmpegPath)
 		.videoCodec(task.mergeType == 'speed'?'copy':'libx264')
 		.audioCodec('copy')
 		.format('mp4')

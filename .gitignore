@@ -1,4 +1,3 @@
 [Nn]ode_modules/
-ffmpeg.exe
-download/
-config.data
+.github/
+yarn.lock

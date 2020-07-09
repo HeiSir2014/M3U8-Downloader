@@ -106,7 +106,10 @@ function createWindow() {
 		mainWindow = null;
 
 	});
-	
+	mainWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
+		event.preventDefault()
+		shell.openExternal(url);
+	})
 }
 function createPlayerWindow(src) {
 	if(playerWindow == null)

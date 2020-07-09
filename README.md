@@ -57,11 +57,11 @@ QQ交流群：341972319
 
 [自定义头添加-视频教程](https://player.bilibili.com/player.html?aid=498666070&bvid=BV1QK411n7VJ&cid=206827525&page=1)
 
-# 下载
+# 下载可执行包
 
-目前仅编译了Windows x64版本，期待其他大神编译其他平台版本。
+目前编译了Windows 和 Mac 版本。
 
-Windows x64 下载地址：[Release](https://github.com/HeiSir2014/M3U8-Downloader/releases)
+[现在下载最新版](https://tools.heisir.cn/HLSDownload/download.html)
 
 # 运行源码
 ### NodeJS开发环境搭建

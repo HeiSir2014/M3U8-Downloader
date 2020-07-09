@@ -64,11 +64,11 @@ QQ交流群：341972319
 Windows x64 下载地址：[Release](https://github.com/HeiSir2014/M3U8-Downloader/releases)
 
 # 运行源码
-### 1.NodeJS开发环境搭建
+### NodeJS开发环境搭建
 
 安装NodeJs最新版，[NodeJs Download](http://nodejs.cn/download/)
 
-### 2.Clone 代码
+### Clone 代码
 
 在任意文件夹下新建一个文件夹存放代码，并执行以下命令
 ```
@@ -76,17 +76,35 @@ cd newdir
 
 git clone https://github.com/HeiSir2014/M3U8-Downloader.git .
 ```
-
-### 3.环境初始化
-
-```
-npm install
-```
-
-### 4.运行M3U8-Downloader
+### Yarn 环境安装
 
 ```
-npm run start
+npm install yarn -g
 ```
 
-### 5.Enjoy it
+### Package 依赖安装
+
+```
+yarn
+```
+### 运行M3U8-Downloader
+
+```
+yarn start
+```
+### 打包发布
+
+```
+//windows 平台打包
+yarn pack-win
+
+//mac 平台打包
+yarn pack-mac
+
+```
+
+### Enjoy it
+
+### 赞赏
+
+[赞赏链接](https://tools.heisir.cn/HLSDownload/2019/07/08/02/)

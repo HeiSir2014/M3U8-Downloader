@@ -14,6 +14,7 @@ const _app = new Vue({
             dlg_header_visible: false,
             dlg_newtask_visible: false,
             config_save_dir:'',
+            config_ffmpeg:'',
             headers:'',
             myKeyIV:'',
             myLocalKeyIV:'',
@@ -41,7 +42,8 @@ const _app = new Vue({
             });
             
             ipcRenderer.on('get-config-dir-reply',function(event,data){
-                that.config_save_dir = data;
+                that.config_save_dir = data.config_save_dir;
+                that.config_ffmpeg = data.config_ffmpeg;
             });
             ipcRenderer.on('open-select-m3u8-reply',function(event,data){
                 that.m3u8_url = data;
@@ -197,6 +199,10 @@ const _app = new Vue({
             ipcRenderer.send('open-select-ts-dir');
         },
         clickStartMergeTS:function(e){
+            this.tsMergeMp4Dir = '';
+            this.tsMergeMp4Path = '';
+            this.tsMergeProgress = 0;
+            this.tsMergeStatus = '';
             if(!this.config_save_dir)
             {
                 this.tabPane = "setting";

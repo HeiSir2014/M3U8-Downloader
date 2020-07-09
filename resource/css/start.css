@@ -4,7 +4,7 @@ html,body,head,body *{
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 1em;
-    user-select:none;
+    user-select-:none;
 }
 
 html{
@@ -283,7 +283,7 @@ html,body,#app,#app section,#app section .main{
     color: #409EFF;
 }
 .heisir .main .paycode .el-card__body{
-    padding: 30px 25px 0;
+    padding: 20px 15px 0;
     text-align: center;
     font-size: 18px;
     font-weight: 400;

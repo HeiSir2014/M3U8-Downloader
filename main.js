@@ -1223,7 +1223,7 @@ ipcMain.on('open-config-dir', function (event, arg) {
 			globalConfigSaveVideoDir = result.filePaths[0];
 			nconf.set('SaveVideoDir',globalConfigSaveVideoDir);
 			nconf.save();
-			event.sender.send("get-config-dir-reply",globalConfigSaveVideoDir);
+			event.sender.send("get-config-dir-reply",{config_save_dir:globalConfigSaveVideoDir,config_ffmpeg:ffmpegPath});
 		}
 	}).catch(err => {
 		logger.error(`showOpenDialog ${err}`)
@@ -1366,4 +1366,9 @@ ipcMain.on('start-merge-ts', async function (event, task) {
 	else{
 		mainWindow.webContents.send('start-merge-ts-status',{code:-1,progress:100,status:'未检测到FFMPEG,不进行合并操作。'});
 	}
+});
+
+
+ipcMain.on("new-hook-url-window",function(){
+	
 });

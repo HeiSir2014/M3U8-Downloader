@@ -59,9 +59,9 @@ QQ交流群：341972319
 
 # 下载可执行包
 
-目前编译了Windows 和 Mac 版本。
+目前仅编译了Windows 和 Mac 版本。
 
-[现在下载最新版](https://tools.heisir.cn/HLSDownload/download.html)
+[下载 Windows 版](https://tools.heisir.cn/HLSDownload/download.html?platform=win)  [下载 MacOS 版](https://tools.heisir.cn/HLSDownload/download.html?platform=mac)
 
 # 运行源码
 ### NodeJS开发环境搭建

@@ -113,6 +113,9 @@ const _app = new Vue({
             console.log(e.target.href);
             shell.openExternal(e.target.href);
         },
+        clickStartHookUrl:function(e){
+            ipcRenderer.send('new-hook-url-window');
+        },
         clickClose:function(e){
             ipcRenderer.send('hide-windows');
         },

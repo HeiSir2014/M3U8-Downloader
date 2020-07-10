@@ -153,7 +153,7 @@ async function checkUpdate(){
 			{
 				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
 				{
-					shell.openExternal("https://tools.heisir.cn/HLSDownload/");
+					shell.openExternal("https://tools.heisir.cn/HLSDownload/download.html");
 					return;
 				}
 			}
@@ -452,7 +452,7 @@ class QueueObject {
 		this.url = '';
 		this.url_prefix = '';
 		this.headers = '';
-		this.myKeyIv = '';
+		this.myKeyIV = '';
 		this.id = 0;
 		this.idx = 0;
 		this.dir = '';
@@ -550,33 +550,73 @@ class QueueObject {
 				{
 					//标准解密TS流
 					let aes_path = path.join(this.dir, "aes.key" );
-					if( !this.myKeyIv && !fs.existsSync( aes_path ))
+					if( !this.myKeyIV && !fs.existsSync( aes_path ))
 					{
 						let key_uri = segment.key.uri;
-						if (! /^http.*/.test(segment.key.uri)) {
-							key_uri = partent_uri + segment.key.uri;
+						if (/^http/.test(this.url) &&  !/^http.*/.test(key_uri) && !/^\/.*/.test(key_uri)) {
+							key_uri = partent_uri + key_uri;
 						}
-						else if(/^\/.*/.test(key_uri))
+						else if(/^http/.test(this.url) && /^\/.*/.test(key_uri))
 						{
 							let mes = this.url.match(/^https?:\/\/[^/]*/);
 							if(mes && mes.length >= 1)
 							{
-								key_uri = mes[0] + segment.key.uri;
+								key_uri = mes[0] + key_uri;
 							}
 							else
 							{
-								key_uri = partent_uri + segment.key.uri;
+								key_uri = partent_uri + key_uri;
 							}
 						}
+						else if(/^file:\/\/\//.test(this.url) && !this.url_prefix && !/^http.*/.test(key_uri))
+						{
+							let fileDir = this.url.replace('file:///','').replace(/[^\\/]{1,}$/,'');
+							let key_uri_ = path.join(fileDir,key_uri);
+							if(!fs.existsSync(key_uri_))
+							{
+								var me = key_uri.match(/[^\\\/\?]{1,}\?|$/i);
+								if(me && me.length > 1){
+									key_uri_ = path.join(fileDir,me[0].replace(/\?$/,'')); 
+								}
+								if(!fs.existsSync(key_uri_))
+								{
+									globalCond[this.id] = false;
+									this.catch && this.catch();
+									return;
+								}
+							}
+							key_uri = "file:///" + key_uri_;
+						}
+						else if(/^file:\/\/\//.test(this.url) && this.url_prefix && !/^http.*/.test(key_uri))
+						{
+							key_uri = this.url_prefix + (this.url_prefix.endsWith('/') || key_uri.startWith('/') ?'':"/") + key_uri;
+						}
 
-						await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout}).catch(console.error);
+						if(/^http/.test(key_uri))
+						{
+							await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout}).catch(console.error);
+						}
+						else if(/^file:\/\/\//.test(key_uri))
+						{
+							key_uri = key_uri.replace('file:///','')
+							if(fs.existsSync(key_uri))
+							{
+								fs.copyFileSync(key_uri,aes_path);
+							}
+							else
+							{
+								globalCond[this.id] = false;
+								this.catch && this.catch();
+								return;
+							}
+						}
 					}
-					if(this.myKeyIv || fs.existsSync( aes_path ))
+					if(this.myKeyIV || fs.existsSync( aes_path ))
 					{
 						try {
 							let key_ =null;
 							let iv_ =null;
-							if(!this.myKeyIv)
+							if(!this.myKeyIV)
 							{
 								key_ = fs.readFileSync( aes_path );
 								iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
@@ -584,10 +624,10 @@ class QueueObject {
 							}
 							else{
 								
-								key_ = Buffer.from(this.myKeyIv.substr(0,32),'hex' );
-								if(this.myKeyIv.length >= 64)
+								key_ = Buffer.from(this.myKeyIV.substr(0,32),'hex' );
+								if(this.myKeyIV.length >= 64)
 								{
-									iv_ = Buffer.from(this.myKeyIv.substr(this.myKeyIv.length - 32,32),'hex' );
+									iv_ = Buffer.from(this.myKeyIV.substr(this.myKeyIV.length - 32,32),'hex' );
 								}
 								else{
 									iv_ = Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' )
@@ -647,7 +687,7 @@ async function startDownload(object) {
 	let headers = object.headers;
 	let url_prefix = object.url_prefix;
 	let taskName = object.taskName;
-	let myKeyIv = object.myKeyIv;
+	let myKeyIV = object.myKeyIV;
 	let url = object.url;
 	let taskIsDelTs = object.taskIsDelTs;
 	if(!taskName){
@@ -700,7 +740,7 @@ async function startDownload(object) {
 		isLiving:false,
 		headers:headers,
 		taskName:taskName,
-		myKeyIv:myKeyIv,
+		myKeyIV:myKeyIV,
 		taskIsDelTs:taskIsDelTs,
 		success:true,
 		videopath:''
@@ -723,7 +763,7 @@ async function startDownload(object) {
 		qo.url = url;
 		qo.url_prefix = url_prefix;
 		qo.headers = headers;
-		qo.myKeyIv = myKeyIv;
+		qo.myKeyIV = myKeyIV;
 		qo.segment = segments[iSeg];
 		qo.then = function(){
 			count_downloaded = count_downloaded + 1
@@ -847,7 +887,7 @@ async function startDownloadLive(object) {
 	let id = !object.id ? new Date().getTime():object.id;
 	let headers = object.headers;
 	let taskName = object.taskName;
-	let myKeyIv = object.myKeyIv;
+	let myKeyIV = object.myKeyIV;
 	let url = object.url;
 	if(!taskName){
 		taskName = id;
@@ -874,7 +914,7 @@ async function startDownloadLive(object) {
 		time: dateFormat(new Date(),"yyyy-mm-dd HH:MM:ss"),
 		status:'初始化...',
 		isLiving:true,
-		myKeyIv:myKeyIv,
+		myKeyIV:myKeyIV,
 		taskName:taskName,
 		headers:headers,
 		videopath:''
@@ -1248,9 +1288,13 @@ ipcMain.on('open-select-ts-dir', function (event, arg) {
 					let _files = files.filter((f)=>{
 						return f.endsWith('.ts') || f.endsWith('.TS')
 					});
-					if(_files.length)
+					if(_files && _files.length)
 					{
 						event.sender.send("open-select-ts-select-reply", _files);
+						return;
+					}
+					else{
+						event.sender.send("open-select-ts-select-reply", files);
 						return;
 					}
 				}
@@ -1258,7 +1302,13 @@ ipcMain.on('open-select-ts-dir', function (event, arg) {
 			let _files = result.filePaths.filter((f)=>{
 				return f.endsWith('.ts') || f.endsWith('.TS')
 			});
-			_files.length && event.sender.send("open-select-ts-select-reply", _files);
+			if(_files && _files.length)
+			{
+				event.sender.send("open-select-ts-select-reply", _files);
+			}
+			else{
+				event.sender.send("open-select-ts-select-reply", result.filePaths);
+			}
 		}
 	}).catch(err => {
 		logger.error(`showOpenDialog ${err}`)

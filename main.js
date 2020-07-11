@@ -243,15 +243,12 @@ app.on('ready', () => {
 app.on('window-all-closed', async () => {
 
 	let HMACCOUNT = nconf.get('HMACCOUNT');
-	// if(fs.existsSync('tongji.ini'))
-	// {
-	// 	HMACCOUNT = fs.readFileSync('tongji.ini',{encoding:"utf-8",flag:"r"});
-	// }
-	await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": referer,"Cookie":"HMACCOUNT="+HMACCOUNT}});
+	HMACCOUNT && await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": referer,"Cookie":"HMACCOUNT="+HMACCOUNT}});
 	
 	// 在 macOS 上，除非用户用 Cmd + Q 确定地退出，
 	// 否则绝大部分应用及其菜单栏会保持激活。
 	if (process.platform !== 'darwin') {
+		tray && tray.destroy();
 		tray = null;
 		app.quit();
 	};
@@ -275,10 +272,10 @@ ipcMain.on("hide-windows",function(){
 		if(firstHide && tray)
 		{
 			tray.displayBalloon({
-				iconType :null,
-				title :"温馨提示",
+				icon:path.join(__dirname,'resource/icon/logo-512.png'),
+				title :"提示",
 				content :"我隐藏到这里了哦，双击我显示主窗口！"
-			})
+			});
 			firstHide = false;
 		}
 	}

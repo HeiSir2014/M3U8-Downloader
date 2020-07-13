@@ -23,6 +23,8 @@ if(!isDev){
 	ffmpegPath = ffmpegPath.replace('app.asar/','').replace('app.asar\\','');
 }
 
+
+
 let isdelts = true;
 let mainWindow = null;
 let playerWindow = null;
@@ -40,6 +42,26 @@ let globalConfigSaveVideoDir = '';
 const httpTimeout = {socket: 600000, request: 600000, response:600000};
 
 const referer = `https://tools.heisir.cn/M3U8Soft-Client?v=${package_self.version}`;
+
+// 单例应用程序
+if (!app.requestSingleInstanceLock()) {
+	app.quit()
+	return
+  }
+  app.on('second-instance', (event, argv, cwd) => {
+	if (mainWindow) {
+	  if (mainWindow.isMinimized()) {
+		mainWindow.restore()
+	  } else if (mainWindow.isVisible()) {
+		mainWindow.focus()
+	  } else {
+		mainWindow.show()
+		mainWindow.focus()
+	  }
+	} else {
+	  app.quit()
+	}
+})
 
 const logger = winston.createLogger({
 	level: 'debug',

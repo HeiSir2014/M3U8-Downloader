@@ -126,7 +126,6 @@ function createWindow() {
 		// 通常会把多个 window 对象存放在一个数组里面，
 		// 与此同时，你应该删除相应的元素。
 		mainWindow = null;
-
 	});
 	mainWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
 		event.preventDefault()

@@ -5,6 +5,7 @@
   "description": "M3U8-Downloader，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
+    "aria2": "^4.1.0",
     "async": "^3.2.0",
     "crypto-js": "^4.0.0",
     "dateformat": "^3.0.3",
@@ -31,9 +32,9 @@
     "pack-win": "electron-builder --win --publish always",
     "postinstall": "electron-builder install-app-deps",
     "pack-linux": "electron-builder --linux --publish always",
-    "windows-latest":"yarn pack-win",
-    "macos-latest":"yarn pack-mac",
-    "ubuntu-latest":"yarn pack-linux"
+    "windows-latest": "yarn pack-win",
+    "macos-latest": "yarn pack-mac",
+    "ubuntu-latest": "yarn pack-linux"
   },
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
@@ -53,13 +54,44 @@
     "asar": true,
     "win": {
       "target": [
-        "nsis",
-        "zip"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
       ],
       "extraResources": [
         "node_modules/ffmpeg-static/ffmpeg.exe"
       ],
       "icon": "resource/icon/logo-512.png"
+    },
+    "dmg": {
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 410,
+          "y": 230,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 230,
+          "type": "file"
+        }
+      ]
     },
     "mac": {
       "hardenedRuntime": true,

@@ -84,6 +84,14 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "M3U8-Downloader"
+    },
+    "appImage": {
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "maintainer": "heisir <heisir21@163.com>",
+      "icon": "./resource/icon",
+      "category": "public.app-category.productivity"
     }
   },
   "author": {

@@ -3,18 +3,29 @@
     <Aside />
     <div class="body">
       <Frame />
-      <Download />
-      <Merge />
-      <Add />
-      <Setting />
-      <About />
+      <Download v-show="view === 'Download'" />
+      <Merge v-show="view === 'Merge'" />
+      <Setting v-show="view === 'Setting'" />
     </div>
+    <Add v-if="add.show" />
+    <About v-if="about.show" />
   </div>
 </template>
 
 <script>
 export default {
-  name: 'App'
+  name: 'App',
+  data () {
+    return {
+      view: 'Download',
+      add: {
+        show: false
+      },
+      about: {
+        show: false
+      }
+    }
+  }
 }
 </script>
 
@@ -40,7 +51,7 @@ html, body, #app{
     justify-content: flex-start;
     align-items: flex-start;
     flex-direction: column;
-    padding: 0 20px 20px;
+    background-color: #fff;
   }
 }
 </style>

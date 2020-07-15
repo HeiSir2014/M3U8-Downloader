@@ -1,5 +1,7 @@
 # m3u8-downloader
 
+1. node 14+
+
 ## Project setup
 ```
 yarn install
@@ -7,7 +9,7 @@ yarn install
 
 ### Compiles and hot-reloads for development
 ```
-yarn serve
+yarn dev
 ```
 
 ### Compiles and minifies for production

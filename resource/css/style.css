@@ -1,0 +1,270 @@
+body,html,head,body *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+}
+html,body{
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+html{
+    background-color:#f3f3f3;
+    /*
+    border: 1px solid;
+    border-radius: 5px;
+    border-color: #888888;
+    -moz-box-shadow:2px 2px 10px #888888;
+    -webkit-box-shadow:2px 2px 10px #888888;
+    box-shadow:2px 2px 10px #888888;
+    */
+}
+.heisir .header{
+    position: relative;
+    height: 40px;
+    background-color:#e6e6e6;
+    -webkit-app-region: drag;
+}
+.heisir .header .space{
+    float:right;
+    margin-right: 50px;
+}
+.heisir .header a{
+    float:right;
+    margin: auto 10px;
+    text-decoration: none;
+    color: #47b3f7;
+    -webkit-app-region: no-drag;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.heisir .header.player{
+    position: absolute;
+    top:0;
+    width: 100%;
+    left: 0;
+    z-index: 999;
+    background-color: #e5e5e5;
+    height: 38px;
+}
+
+.heisir .header *{
+    line-height: 40px;
+    height: 100%;
+}
+
+.heisir .header .title{
+    margin-left: 12px;
+    background: url(../icon/logo.png) no-repeat;
+    font-weight: 800;
+    font-size: 20px;
+    padding-left: 36px;
+    background-size: contain;
+    color: #009afb;
+}
+
+.heisir .header .close{
+    width: 48px;
+    height: 24px;
+    position: absolute;
+    right: 0px;
+    border: 0;
+    background-image: url(../icon/close.png);
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+    background-position-x: 18px;
+    background-position-y: 6px;
+    background-color: #00000000;
+    -webkit-app-region: no-drag;
+
+}
+
+.heisir .header .close:hover
+,.heisir .header .close:active
+,.heisir .header .close:focus
+,.heisir .header .close:visited{
+    background-color: #e72737;
+    background-image: url(../icon/close-hover.png);
+}
+
+.heisir .main{
+    text-align: center;
+    height:calc(100% - 48px);
+    overflow-y: hidden;
+}
+
+.heisir .main.player{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow:hidden;
+}
+
+.heisir .main.player .video{
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+}
+
+.heisir .main .addTask{
+    margin-top:40px;
+}
+.heisir .main .addTask input{
+    line-height: 32px;
+    border: 1px solid;
+    border-color: #47b3f7;
+    box-sizing: border-box;
+}
+
+.heisir .main .addTask .urls{
+    line-height: 32px;
+    border: 1px solid;
+    border-color: #47b3f7;
+    box-sizing: border-box;
+    width: 60%;
+    padding: 0 10px;
+    border-right: 0;
+    border-radius: 0px;
+    margin-left: -5px;
+}
+.heisir .main .addTask .httpHeader{
+    width: 80px;
+    color: #fff;
+    background: #3385ff;
+    letter-spacing: 0px;
+    border-left: 0;
+    border-radius: 15px 0px  0px 15px;
+    cursor: pointer;
+}
+
+.heisir .main .addTask .headers{
+    width: 60%;
+    margin: 10px auto;
+}
+
+.heisir .main .addTask .headers .content{
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid;
+    border-color: #47b3f7;
+    box-sizing: border-box;
+    padding: 10px;
+    margin-left: -70px;
+}
+
+.heisir .main .addTask .download{
+    width: 80px;
+    color: #fff;
+    background: #3385ff;
+    letter-spacing: 2px;
+    border-left: 0;
+    border-radius: 0px 15px 15px 0px;
+    cursor: pointer;
+    margin-left: -5px;
+}
+
+.heisir .main .addTask .info .success{
+    color: mediumseagreen;
+    margin-top: 5px;
+}
+.heisir .main .addTask .info .fail{
+    color: red;
+    margin-top: 5px;
+}
+.heisir .main .TaskList{
+    width: 85%;
+    height: calc(100% - 260px);
+    margin: 15px auto;
+    padding: 10px;
+    overflow-y: auto;
+    padding: 0px;
+    border-radius: 28px;
+}
+.heisir .main .TaskList .item{
+    width: 100%;
+    height: 60px;
+    position: relative;
+    background: #fff;
+    border-radius: 2px;
+    padding: 5px;
+    text-align: left;
+    margin: 0 0 10px 0;
+}
+
+.heisir .main .TaskList .item .m3u8{
+    width: 64px;
+    height:100%;
+    background-image: url(../icon/m3u8.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+.heisir .main .TaskList .item .link{
+    position: absolute;
+    left: 64px;
+    top: 5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 80%;
+}
+
+.heisir .main .TaskList .item .link input{
+    width: 100%;
+    height: 100%;
+    border: solid 0px ;
+}
+
+
+.heisir .main .TaskList .item .time{
+    position: absolute;
+    left: 64px;
+    bottom: 5px;
+}
+.heisir .main .TaskList .item .status{
+    position: absolute;
+    left: 300px;
+    bottom: 5px;
+}
+.heisir .main .TaskList .item .opt{
+    position: absolute;
+    font-size: 15px;
+}
+
+.heisir .main .TaskList .item .opt.bottom{
+    right: 10px;
+    bottom: 5px;
+}
+
+.heisir .main .TaskList .item .opt.top{
+    right: 10px;
+    top: 5px;
+}
+
+.heisir .main .TaskList .item input[type=button]{
+    color: #fff;
+    background: #3385ff;
+    letter-spacing: 0px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 0px solid transparent;
+    padding: 1px 5px;
+}
+.heisir .main .TaskList .empty{
+    width: 100%;
+    height: 100%;
+    color: white;
+    text-align: center;
+    box-sizing: border-box;
+    background: #007ac7;
+    font-size: xx-large;
+    display: table;
+}
+.heisir .main .TaskList .empty span{
+    display: table-cell;
+    vertical-align: middle;
+}

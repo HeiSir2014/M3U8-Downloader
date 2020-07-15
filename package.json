@@ -90,7 +90,6 @@
     },
     "linux": {
       "maintainer": "heisir <heisir21@163.com>",
-      "icon": "./resource/icon",
       "category": "Utility"
     }
   },

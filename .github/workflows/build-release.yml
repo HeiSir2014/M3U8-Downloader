@@ -14,7 +14,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest]
         node-version: [ 12.14.1 ]
 
     steps:
@@ -37,3 +37,4 @@ jobs:
         path: ../dist
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}

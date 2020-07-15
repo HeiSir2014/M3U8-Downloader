@@ -1,7 +1,7 @@
 {
   "name": "m3u8-downloader",
   "productName": "M3U8-Downloader",
-  "version": "2.0.2",
+  "version": "2.0.1",
   "description": "M3U8-Downloader，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -30,7 +30,10 @@
     "pack-mac": "electron-builder --mac",
     "pack-win": "electron-builder --win",
     "postinstall": "electron-builder install-app-deps",
-    "pack-linux": "electron-builder --linux"
+    "pack-linux": "electron-builder --linux",
+    "windows-latest":"yarn pack-win",
+    "macos-latest":"yarn pack-mac",
+    "ubuntu-latest":"yarn pack-linux"
   },
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
@@ -50,7 +53,6 @@
     "asar": true,
     "win": {
       "target": [
-        "dir",
         "nsis",
         "zip"
       ],
@@ -67,12 +69,21 @@
         "dmg"
       ],
       "extraResources": [
-        {
-          "from": "node_modules/ffmpeg-static/ffmpeg",
-          "to": "node_modules/ffmpeg-static/ffmpeg"
-        }
+        "node_modules/ffmpeg-static/ffmpeg"
       ],
       "icon": "resource/icon/logo.icns"
+    },
+    "nsis": {
+      "perMachine": true,
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "resource/icon/logo.ico",
+      "uninstallerIcon": "resource/icon/logo.ico",
+      "installerHeaderIcon": "resource/icon/logo.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "M3U8-Downloader"
     }
   },
   "author": {

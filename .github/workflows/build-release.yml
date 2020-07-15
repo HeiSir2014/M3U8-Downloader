@@ -23,8 +23,5 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: |
-          echo ${{ matrix.os }}
           yarn
-          yarn pack-win
-          yarn pack-mac
-          yarn pack-linux
+          yarn ${{ matrix.os }}

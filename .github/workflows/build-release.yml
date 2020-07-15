@@ -5,7 +5,8 @@ name: M3U8-Downloader-Build
 
 on:
   push:
-    branches: [ master ]
+    tags:
+      - v*.*.*
 
 jobs:
   build:

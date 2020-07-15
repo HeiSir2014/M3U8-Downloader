@@ -1,3 +1,5 @@
+![M3U8-Downloader-Build](https://github.com/HeiSir2014/M3U8-Downloader/workflows/M3U8-Downloader-Build/badge.svg?branch=master)
+
 # M3U8-Downloader
 M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视频流的APP，功能特点如下：
 

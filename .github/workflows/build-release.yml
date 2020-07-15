@@ -23,13 +23,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: |
-          yarn
-          yarn ${{ matrix.os }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-
     - name: Build/release Electron app
       uses: samuelmeuli/action-electron-builder@v1
       with:

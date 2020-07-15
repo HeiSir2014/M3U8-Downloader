@@ -27,10 +27,10 @@
   },
   "scripts": {
     "start": "electron .",
-    "pack-mac": "electron-builder --mac",
-    "pack-win": "electron-builder --win",
+    "pack-mac": "electron-builder --mac --publish always",
+    "pack-win": "electron-builder --win --publish always",
     "postinstall": "electron-builder install-app-deps",
-    "pack-linux": "electron-builder --linux",
+    "pack-linux": "electron-builder --linux --publish always",
     "windows-latest":"yarn pack-win",
     "macos-latest":"yarn pack-mac",
     "ubuntu-latest":"yarn pack-linux"
@@ -91,7 +91,7 @@
     "linux": {
       "maintainer": "heisir <heisir21@163.com>",
       "icon": "./resource/icon",
-      "category": "public.app-category.productivity"
+      "category": "Utility"
     }
   },
   "author": {

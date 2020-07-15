@@ -89,6 +89,10 @@
       "category": "public.app-category.productivity"
     },
     "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "maintainer": "heisir <heisir21@163.com>",
       "category": "Utility"
     }

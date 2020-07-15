@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="resource/cdn/element.ui/theme-chalk/index.css">
+    <link rel="stylesheet" href="resource/css/start.css">
+</head>
+
+<body class="heisir">
+    <div id="app">
+        <template>
+            <el-container>
+                <el-header height='50px'>
+                    <el-row>
+                        <el-col :span="14">
+                            <div class="title">{{'M3U8-Downloader v' + version}}</div>
+                        </el-col>
+                    </el-row>
+
+                    <div class="systemTool">
+                        <el-dropdown trigger="click">
+                            <span class="el-dropdown-link">关于</span>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item icon="el-icon-link">
+                                    <a class="mylink" href="https://tools.heisir.cn/HLSDownload/"
+                                    v-on:click.stop.prevent="clickAClick">官网</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item icon="el-icon-link">
+                                    <a class="mylink" href="https://github.com/HeiSir2014/M3U8-Downloader"
+                            v-on:click.stop.prevent="clickAClick">开放源码</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item icon="el-icon-connection">
+                                    <a class="mylink" href="https://jq.qq.com/?_wv=1027&k=nhFrZBS0"
+                            v-on:click.stop.prevent="clickAClick">点击加群</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item icon="el-icon-connection">
+                                    <a class="mylink" href="#"
+                            v-on:click.stop.prevent="clickStartHookUrl">资源嗅探</a>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
+                        <el-button class="button" icon="el-icon-setting" v-on:click="tabPane = 'setting'"></el-button>
+                        <el-button class="button" icon="el-icon-close" v-on:click="clickClose"></el-button>
+                    </div>
+                </el-header>
+                <el-main class="main">
+                    <el-tabs type="border-card" v-model="tabPane">
+                        <el-tab-pane label="M3U8视频下载">
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">视频源</span>
+                                </el-col>
+                                <el-col :span="16">
+                                    <div @drop="dropM3U8File" @dragover.prevent @dragenter.prevent>
+                                        <el-input placeholder="输入在线网络视频源URL，或将M3U8文件拖拽至此" v-model="m3u8_url"
+                                        draggable="false">
+                                            <i slot="prefix" class="el-input__icon el-icon-link"></i>
+                                            <i slot="suffix" class="el-input__icon el-icon-folder-opened" @click="clickSelectM3U8"></i>
+                                        </el-input>
+                                    </div>
+                                </el-col>
+                                <!--
+                                <el-col :span="3">
+                                    <el-button class="mybutton" type="warning" icon="el-icon-s-tools" @click="dlg_header_visible = true">
+                                        自定义设置</el-button>
+                                </el-col>
+                                -->
+                                <el-col :span="3">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-news" @click="clickNewTask">新建下载</el-button>
+                                </el-col>
+                            </el-row>
+                            <br>
+                            <ul class="list TaskList" style="overflow:auto">
+                                <li v-for="o in allVideos" :key="o.id" class="item">
+                                    <div class="m3u8"></div>
+                                    <div class="link"><input type="text" :value="o.url" readonly></div>
+                                    
+                                    <div class="name"><span >名称：</span><span class="value">{{o.taskName}}</span></div>
+                                    <div class="time"><span >时间：</span><span class="value">{{o.time}}</span></div>
+                                    <div class="status">
+                                        <span >状态：</span><span class="value">{{o.status}}</span>
+                                    </div>
+                                    <div class="opt top">
+                                        <input class="opendir" opt="opendir" :data="o.dir" type="button" value="打开文件夹" @click="clickItemOptData">
+                                    </div>
+                                    <div class="opt bottom">
+                                        <input class="del" opt="delvideo" :data="o.id" type="button" value="删除" @click="clickItemOptData">
+                                        <input class="play" opt="playvideo" :data="o.videopath" type="button" value="播放" @click="clickItemOptData">
+                                        <input class="StartStop" opt="StartOrStop" :data="o.id" type="button" value="停止" @click="clickItemOptData">
+                                    </div>
+                                </li>
+                                <el-alert v-if="!allVideos.length" style="margin-top: 10px; height: 100px; line-height: 1;"
+                                    title="您还没有添加下载任务，在浏览器里嗅探到M3U8(HLS协议)视频流后，可以在这里缓存下载，快来试试吧。" 
+                                    type="success" effect="light" :closable="false" :center="true" show-icon
+                                    ></el-alert>
+                            </ul>
+                            <el-dialog title="新建下载任务" :visible.sync="dlg_newtask_visible" width="60%" :modal="true"
+                                :close-on-click-modal="false" :close-on-press-escape="false" :center="false">
+                                <el-form label-width="80px">
+                                    <el-form-item label="任务名" label-position="right">
+                                        <el-input type="text" placeholder="[可空] 默认当前时间戳" v-model="taskName"></el-input>
+                                    </el-form-item>
+                                    
+                                    <el-form-item label="URL前缀" label-position="right" v-if="m3u8_url.startsWith('file:///')">
+                                        <el-tooltip effect="light" placement="top-start">
+                                            <div slot="content">如果M3U8文件是从网上直接下载下来的，TS流是在网络上的且M3U8文件里没有URL(http)前缀，就需要填写<br /><br />
+                                            如果TS视频流在M3U8文件目录下，则不需要填写这块<br /></div>
+                                            <el-input type="text" placeholder="[可空] M3U8 URL前缀，例如：http://heisir.cn/cdn/123456/" v-model="m3u8_url_prefix"></el-input>
+                                        </el-tooltip>
+                                    </el-form-item>
+                                    <el-form-item label="附加头" label-position="right">
+                                        <el-input type="textarea" :rows="4" placeholder="[可空] 请输入一行一个Header，例如：
+Origin: http://www.host.com
+Referer: http://www.host.com" v-model="headers"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="私有KEY" label-position="right">
+                                        <el-tooltip effect="light" placement="top-start">
+                                            <div slot="content">32位HEX格式KEY和32位IV值，IV值可空<br />示例：<br />ABABABABABBBBBBBABABABABABBBBBBBABABABABABBBBBBBABABABABABBBBBBB<br />或者：<br />ABABABABABBBBBBBABABABABABBBBBBB<br /></div>
+                                            <el-input type="text" placeholder="[可空] KEY和IV值(HEX格式)" v-model="myKeyIV"></el-input>
+                                        </el-tooltip>
+                                    </el-form-item>
+                                    <el-form-item label="合并完成" label-position="right">
+                                        <el-checkbox v-model="taskIsDelTs" label="删除TS片段"></el-checkbox>
+                                    </el-form-item>
+                                </el-form>
+                                <div slot="footer" class="dialog-footer">
+                                    <el-row :gutter="20">
+                                        <el-col :span="8" :offset="16">
+                                            <el-button type="primary" @click="clickNewTaskOK" style="width: 100%;">确 定</el-button>
+                                        </el-col>
+                                    </el-row>
+                                </div>
+                            </el-dialog>
+                        </el-tab-pane>
+                        <!--
+                        <el-tab-pane label="M3U8 本地文件">
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">本地源:</span>
+                                </el-col>
+                                <el-col :span="17">
+                                    <div @drop="dropM3U8File" draggable @dragover.prevent @dragenter.prevent>
+                                        <el-input placeholder="单击浏览按钮 或 将文件拖拽至此" v-model="m3u8_file"
+                                        clearable >
+                                            <i slot="prefix" class="el-input__icon el-icon-document"></i>
+                                        </el-input>
+                                    </div>
+                                </el-col>
+                                <el-col :span="3">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickOpenM3U8File">浏览文件</el-button>
+                                </el-col>
+                            </el-row>
+                            <br />
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">URL前缀:</span>
+                                </el-col>
+                                <el-col :span="17">
+                                    <el-tooltip effect="light" placement="top-start">
+                                        <div slot="content">如果M3U8文件是从网上直接下载下来的，TS流是在网络上的且M3U8文件里没有URL(http)前缀，就需要填写<br /><br />
+                                            如果TS视频流在M3U8文件目录下，则不需要填写这块<br /></div>
+                                        <el-input placeholder="M3U8 URL前缀 例如：http://heisir.cn/cdn/123456/" v-model="m3u8_file_url_prefix"
+                                            clearable >
+                                        </el-input>
+                                    </el-tooltip>
+                                </el-col>
+                            </el-row>
+                            <br />
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">私有KEY:</span>
+                                </el-col>
+                                <el-col :span="17">
+                                    <el-tooltip effect="light" placement="top-start">
+                                        <div slot="content">32位HEX格式KEY和32位IV值，IV值可空<br /></div>
+                                            <el-input type="text" placeholder="KEY和IV值(HEX格式)，不使用AES解密可不填写" v-model="myLocalKeyIV"></el-input>
+                                        </el-input>
+                                    </el-tooltip>
+                                </el-col>
+                            </el-row>
+                            <br />
+                            <el-row :gutter="8">
+                                <el-col :span="4" :offset="3">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickNewLocalTask">新建下载</el-button>
+                                </el-col>
+                            </el-row>
+                        </el-tab-pane>
+                        -->
+                        <el-tab-pane label="M3U8批量下载">
+                            <el-form label-width="130px" style="margin-right: 65px;">
+                                <el-form-item label="批量视频源" label-position="right">
+                                    <el-input type="textarea" :rows="6" placeholder="请输入一行一个M3U8视频源，格式：视频源----任务名（可空）,例如：
+https://host/index1.m3u8----第一个视频
+https://host/index2.m3u8----第二个视频
+https://host/index3.m3u8" v-model="m3u8_urls"></el-input>
+                                </el-form-item>
+                                <el-form-item label="附加头" label-position="right">
+                                    <el-input type="textarea" :rows="4" placeholder="[可空] 请输入一行一个Header，例如：
+Origin: http://www.host.com
+Referer: http://www.host.com" v-model="headers"></el-input>
+                                </el-form-item>
+                                <el-form-item label="合并完成" label-position="right">
+                                    <el-checkbox v-model="taskIsDelTs" label="删除TS片段"></el-checkbox>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button class="mybutton" type="primary" @click="clickNewTaskMuti">批量下载</el-button>
+                                </el-form-item>
+                            </el-form>
+                        </el-tab-pane>
+                        <el-tab-pane label="合并视频片段">
+                            <el-row :gutter="8" style="margin-bottom: 5px;">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">视频片段</span>
+                                </el-col>
+                                <el-col :span="20" >
+                                    <div @drop="dropTSFiles" @dragover.prevent @dragenter.prevent>
+                                        <el-input placeholder="选择一个包含TS流的目录或将所有TS文件拖拽至此" v-model="ts_dir"
+                                        clearable draggable="false">
+                                            <i slot="suffix" class="el-input__icon el-icon-folder-opened" @click="clickSelectTSDir"></i>
+                                        </el-input>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="8" style="margin-bottom: 5px;">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">合并名称</span>
+                                </el-col>
+                                <el-col :span="20" >
+                                    <el-input placeholder="[可空] 默认当前时间戳" v-model="tsTaskName"
+                                        clearable draggable="false"></el-input>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="8" style="margin-bottom: 5px;">
+                                <el-col :span="7" :offset="3">
+                                    <div>
+                                        <el-radio style="line-height: 40px;" v-model="tsMergeType" label="speed">快速合并</el-radio>
+                                        <el-radio style="line-height: 40px;" v-model="tsMergeType" label="transcoding">修复合并(慢|转码)</el-radio>
+                                    </div>
+                                </el-col>
+                                <el-col :span="6" :offset="1">
+                                    <span style="line-height: 40px;">共导入 {{ts_urls.length}} 个视频片段</span>
+                                </el-col>
+                                <el-col :span="3" :offset="1">
+                                    <el-button class="mybutton" type="primary" @click="clickStartMergeTS" :disabled="ts_urls.length==0">开始合并</el-button>
+                                </el-col>
+                                <el-col :span="2">
+                                    <el-button class="mybutton" type="danger" @click="clickClearMergeTS" :disabled="ts_urls.length==0">清空</el-button>
+                                </el-col>
+                            </el-row>
+
+                            <el-row :gutter="8" style="margin-top: 10px;margin-bottom: 5px;" v-if="tsMergeStatus">
+                                <el-col :span="2" :offset="1">
+                                    <span v-if="tsMergeStatus !='success'" style="line-height: 100px;float: right;">合并进度</span>
+                                    <span v-if="tsMergeStatus =='success'" style="line-height: 40px;float: right;">查看文件</span>
+                                </el-col>
+                                <el-col :span="6" v-if="tsMergeStatus !='success'">
+                                    <el-progress type="circle" :percentage="tsMergeProgress" status="success" :width="100"></el-progress>
+                                </el-col>
+                                <el-col :span="4" v-else>
+                                    <el-button class="mybutton" type="success" @click="clickOpenMergeTSDir">打开文件夹</el-button>
+                                </el-col>
+                                <el-col :span="4" v-if="tsMergeMp4Path">
+                                    <el-button class="mybutton" type="success" @click="clickPlayMergeMp4">播放视频</el-button>
+                                </el-col>
+                            </el-row>
+                            
+                            <el-row :gutter="8" v-if="tsMergeStatus !='success' && tsMergeStatus">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">日志</span>
+                                </el-col>
+                                <el-col :span="20">
+                                    <el-input type="textarea" :rows="4" readonly placeholder="" v-model="tsMergeStatus"></el-input>
+                                </el-col>
+                            </el-row>
+                        </el-tab-pane>
+                        <el-tab-pane label="交流咨询">
+                            <el-row :gutter="8">
+                                <el-col :span="24" >
+                                    <el-alert
+                                    title="警示：【天网恢恢疏而不漏】遵纪守法是每位公民应尽的义务，严禁在此发布违规违法内容，否则后果自负！违规内容举报QQ：1586462"
+                                    type="warning"
+                                    :center="true" :closable="false" show-icon>
+                                </el-alert>
+                                </el-col>
+                            </el-row>
+                            <section id="comments" class="vcomment"></section>
+                        </el-tab-pane>
+                        <el-tab-pane label="设置" name="setting">
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">视频存储</span>
+                                </el-col>
+                                <el-col :span="18">
+                                    <el-input placeholder="请单击右侧按钮选择存储文件夹" v-model="config_save_dir" :readonly="true" ></el-input>
+                                </el-col>
+                                <el-col :span="2">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickOpenConfigDir">浏览</el-button>
+                                </el-col>
+                            </el-row>
+                            <br />
+                            <el-row :gutter="8">
+                                <el-col :span="2" :offset="1">
+                                    <span style="line-height: 40px;float: right;">日志</span>
+                                </el-col>
+                                <el-col :span="4">
+                                    <el-button class="mybutton" type="primary" icon="el-icon-view" @click="clickOpenLogDir">查看日志目录</el-button>
+                                </el-col>
+                                <el-col :span="4" :offset="1">
+                                    <span style="line-height: 40px;float: right;">FFMPEG</span>
+                                </el-col>
+                                <el-col :span="9">
+                                    <el-input placeholder="FFMPEG" v-model="config_ffmpeg" :readonly="true" ></el-input>
+                                </el-col>
+                            </el-row>
+                            <br>
+                            <el-divider><i class="el-icon-coffee"></i></el-divider>
+                            <el-row :gutter="8">
+                                <el-col :span="4" :offset="7">
+                                    <el-card class="paycode alipay" shadow="always">
+                                        <img class="image" src="resource/alipay_code.png">
+                                        <div style="padding: 14px;">
+                                            <span>支付宝赞助</span>
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                                <el-col :span="4" :offset="2">
+                                    <el-card class="paycode wechat" shadow="always">
+                                        <img class="image" src="resource/wechat_code.png">
+                                        <div style="padding: 14px;">
+                                            <span>微信赞助</span>
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="8">
+                                <el-col :span="12" :offset="6">
+                                    <el-alert
+                                    title="开发不易，如果您觉得此款软件对您有帮助，可以请小哥哥喝杯咖啡吗?"
+                                    type="error"
+                                    :center="true" :closable="false">
+                                </el-alert>
+                                </el-col>
+                            </el-row>
+                        </el-tab-pane>
+                    </el-tabs>
+                </el-main>
+            </el-container>
+        </template>
+    </div>
+    <script src="resource/cdn/vue/vue.js"></script>
+    <script src="resource/cdn/element.ui/index.js"></script>
+    <script src="start.js"></script>
+
+    <script src="resource/cdn/Valine/Valine.min.js"></script>
+    
+<script>
+    var GUEST_INFO = ['nick','mail','link'];
+    var guest_info = 'nick'.split(',').filter(function(item){
+        return GUEST_INFO.indexOf(item) > -1
+    });
+	console.log(guest_info)
+    var notify = 'false' == true;
+    var verify = 'false' == true;
+    new Valine({
+        el: '.vcomment',
+        notify: notify,
+        verify: verify,
+        appId: "dYhmAWg45dtYACWfTUVR2msp-gzGzoHsz",
+        appKey: "SbuBYWY21MPOSVUCTHdVlXnx",
+        placeholder: "可以在这里进行咨询交流",
+        pageSize:'100',
+        avatar:'mm',
+        lang:'zh-cn',
+		meta:guest_info,
+        recordIP:true,
+        path:'/m3u8-downloader'
+    });
+</script>
+</body>
+
+</html>

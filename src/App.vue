@@ -7,8 +7,12 @@
       <Merge v-show="view === 'Merge'" />
       <Setting v-show="view === 'Setting'" />
     </div>
-    <Add v-if="add.show" />
-    <About v-if="about.show" />
+    <transition name="fadeIn">
+      <Add v-if="popup.add" />
+    </transition>
+    <transition name="fadeIn">
+      <About v-if="popup.about" />
+    </transition>
   </div>
 </template>
 
@@ -17,7 +21,6 @@ export default {
   name: 'App',
   data () {
     return {
-      view: 'Download',
       add: {
         show: false
       },
@@ -25,11 +28,20 @@ export default {
         show: false
       }
     }
+  },
+  computed: {
+    view () {
+      return this.$store.getters.getView
+    },
+    popup () {
+      return this.$store.getters.getPopup
+    }
   }
 }
 </script>
 
 <style lang="scss">
+@import './assets/scss/index.scss';
 html, body, #app{
   height: 100%;
   border-radius: 0px;
@@ -52,6 +64,12 @@ html, body, #app{
     align-items: flex-start;
     flex-direction: column;
     background-color: #fff;
+  }
+  .fadeIn-enter-active, .fadeIn-leave-active{
+    transition: all .5s ease-in-out;
+  }
+  .fadeIn-enter, .fadeIn-leave-to{
+    opacity: 0;
   }
 }
 </style>

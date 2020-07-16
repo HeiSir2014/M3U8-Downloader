@@ -15,7 +15,7 @@ protocol.registerSchemesAsPrivileged([
 
 function createWindow () {
   win = new BrowserWindow({
-    width: 1624,
+    width: 1024,
     height: 633,
     frame: false,
     resizable: true,

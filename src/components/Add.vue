@@ -84,7 +84,7 @@ export default {
   name: 'Add',
   data () {
     return {
-      tab: 'file',
+      tab: 'link', // file
       linkList: '',
       rename: '',
       domain: '',

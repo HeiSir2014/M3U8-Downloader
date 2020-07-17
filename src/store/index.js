@@ -7,7 +7,7 @@ export default new Vuex.Store({
   state: {
     view: 'Download',
     popup: {
-      add: true,
+      add: false,
       about: false
     },
     setting: {

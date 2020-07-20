@@ -1,6 +1,6 @@
 <template>
   <div class="frame">
-    <div class="frame-left" v-show="view === 'Download'"></div>
+    <div class="frame-left"></div>
     <div class="frame-right">
       <span class="min" @click="frameClickEvent('min')" title="最小化">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

@@ -27,7 +27,52 @@
       </div>
       <div class="stright-body">
         <div class="basic" v-show="state === 'basic'">
-          基础设置
+          <div class="item theme">
+            <div class="label">主题</div>
+            <div class="options">
+              <div>
+                <div class="img"></div>
+                <div class="desc">自动</div>
+              </div>
+              <div>
+                <div class="img"></div>
+                <div class="desc">浅色</div>
+              </div>
+              <div>
+                <div class="img"></div>
+                <div class="desc">深色</div>
+              </div>
+            </div>
+          </div>
+          <div class="item language">
+            <div class="label">语言: </div>
+            <div class="options"></div>
+          </div>
+          <div class="item run">
+            <div class="label">启动: </div>
+            <div class="options">
+              开机自动启动
+            </div>
+          </div>
+          <div class="item path">
+            <div class="label">默认下载路径: </div>
+            <div class="options"></div>
+          </div>
+          <div class="item path">
+            <div class="label">默认合并路径: </div>
+            <div class="options"></div>
+          </div>
+          <div class="item speed">
+            <div class="label">传输设置: </div>
+            <div class="options"></div>
+          </div>
+          <div class="item task">
+            <div class="label">任务管理: </div>
+            <div class="options">
+              <div class="max">同时下载的最大任务数</div>
+              div.notice
+            </div>
+          </div>
         </div>
         <div class="advanced" v-show="state === 'advanced'">
           高级设置
@@ -144,7 +189,8 @@ export default {
     .stright-body{
       flex: 1;
       width: 100%;
-      border: 1px solid #000;
+      overflow-y: auto;
+      &::-webkit-scrollbar { display: none }
     }
     .stright-footer{
       height: 70px;

@@ -637,6 +637,10 @@ class QueueObject {
 							if(!this.myKeyIV)
 							{
 								key_ = fs.readFileSync( aes_path );
+								if(key_.length == 32)
+								{
+									key_ = Buffer.from(fs.readFileSync( aes_path ,{encoding:'utf8'}),'hex' );
+								}
 								iv_ = segment.key.iv != null ? Buffer.from(segment.key.iv.buffer)
 								:Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' );
 							}
@@ -651,6 +655,7 @@ class QueueObject {
 									iv_ = Buffer.from(that.idx.toString(16).padStart(32,'0') ,'hex' )
 								}
 							}
+							logger.debug(`key:${key_.toString('hex')} | iv:${iv_.toString('hex')}`)
 							let cipher = crypto.createDecipheriv((segment.key.method+"-cbc").toLowerCase(), key_, iv_);
 							cipher.on('error', console.error);
 							let inputData = fs.readFileSync( filpath_dl );

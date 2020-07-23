@@ -931,10 +931,10 @@ async function startDownloadLive(object) {
 	if(!taskName){
 		taskName = id;
 	}
-	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName);
+	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,""));
 	if(globalConfigSaveVideoDir)
 	{
-		dir = path.join(globalConfigSaveVideoDir, taskName)
+		dir = path.join(globalConfigSaveVideoDir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,""))
 	}
 	logger.info(dir);
 	if(!fs.existsSync(dir))

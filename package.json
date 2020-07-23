@@ -1,7 +1,7 @@
 {
   "name": "m3u8-downloader",
   "productName": "M3U8-Downloader",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "M3U8-Downloader，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {

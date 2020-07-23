@@ -162,6 +162,22 @@ function createPlayerWindow(src) {
 	playerWindow.loadFile(path.join(__dirname, 'player.html'),{search:"src="+src});
 }
 
+// 9999.9999.9999 > 1.1.1 最高支持4位版本对比。  1.2.1 > 1.2.0   1.3 > 1.2.9999
+function version2float(v){
+	let va = v.split('.');
+	if(va)
+	{
+		let result = 0;
+		let base = 10000000.0;
+		va.forEach(vf => {
+			result = result + base * vf;
+			base = base / 10000.0;
+		});
+		return result;
+	}
+	return 0;
+}
+
 async function checkUpdate(){
 	//const { body } =await got("https://raw.githubusercontent.com/HeiSir2014/M3U8-Downloader/master/package.json").catch(logger.error);
 	
@@ -170,7 +186,7 @@ async function checkUpdate(){
 	{
 		try {
 			let _package = JSON.parse(body);
-			if(_package.version != package_self.version)
+			if(version2float(_package.version) > version2float(package_self.version))
 			{
 				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
 				{
@@ -716,10 +732,10 @@ async function startDownload(object) {
 	if(!taskName){
 		taskName = `${id}`;
 	}
-	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName);
+	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,""));
 	if(globalConfigSaveVideoDir)
 	{
-		dir = path.join(globalConfigSaveVideoDir, taskName)
+		dir = path.join(globalConfigSaveVideoDir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,""))
 	}
 	
 	logger.info(dir);
@@ -844,7 +860,7 @@ async function startDownload(object) {
 			return;
 		}
 		fs.writeFileSync(path.join(dir,'index.txt'),indexData);
-		let outPathMP4 = path.join(dir,id+'.mp4');
+		let outPathMP4 = path.join(dir,taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,"")+'.mp4');
 		let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
 		if(!fs.existsSync(ffmpegBin))
 		{

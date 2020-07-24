@@ -62,7 +62,7 @@ QQ交流群：341972319
 # 下载可执行包
 
 ## [推荐] 蓝奏下载
-## [Win 、Linux、MacOS 下载](https://tools.heisir.cn/HLSDownload/download.html)
+## [Windows 、Linux、MacOS 下载](https://tools.heisir.cn/HLSDownload/download.html)
 
 # 运行源码
 ### NodeJS开发环境搭建

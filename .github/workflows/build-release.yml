@@ -31,10 +31,12 @@ jobs:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v2
       with:
         name: dist
-        path: ../dist
+        path: |
+          dist/M3U8-Downloader-*
+          !dist/M3U8-Downloader-*.blockmap
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}

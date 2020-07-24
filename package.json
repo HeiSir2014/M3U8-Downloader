@@ -39,28 +39,32 @@
   },
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
-    "artifactName": "${productName}-${os}-${version}.${ext}",
+    "artifactName": "${productName}-${os}-${arch}-${version}.${ext}",
     "electronVersion": "9.0.5",
     "copyright": "Copyright © year ${author}",
-    "compression": "maximum",
+    "compression": "normal",
     "directories": {
-      "output": "../dist"
+      "output": "dist"
     },
     "files": [
       "**/*",
+      "!dist/*",
+      "!.github/*",
+      "!test/*",
+      "!README.md",
       "!node_modules/ffmpeg-static/ffmpeg.exe",
       "!node_modules/ffmpeg-static/ffmpeg",
-      "!node_modules/ffmpeg-static/ffmpeg.ffmpeg"
+      "!node_modules/ffmpeg-static/ffmpeg.ffmpeg",
+      "!resource/aria2/*"
     ],
     "asar": true,
+    "electronDownload":{
+      "cache":"D:\\Documents\\Downloads"
+    },
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
+          "target": "nsis"
         },
         {
           "target": "zip",
@@ -71,7 +75,9 @@
         }
       ],
       "extraResources": [
-        "node_modules/ffmpeg-static/ffmpeg.exe"
+        "node_modules/ffmpeg-static/ffmpeg.exe",
+        "resource/aria2/win32/aria2.conf",
+        "resource/aria2/win32/aria2c.exe"
       ],
       "icon": "resource/icon/logo-512.png"
     },
@@ -102,7 +108,9 @@
         "dmg"
       ],
       "extraResources": [
-        "node_modules/ffmpeg-static/ffmpeg"
+        "node_modules/ffmpeg-static/ffmpeg",
+        "resource/aria2/darwin/aria2.conf",
+        "resource/aria2/darwin/aria2c"
       ],
       "icon": "resource/icon/logo.icns"
     },
@@ -122,6 +130,11 @@
       "category": "public.app-category.productivity"
     },
     "linux": {
+      "extraResources": [
+        "node_modules/ffmpeg-static/ffmpeg",
+        "resource/aria2/linux/aria2.conf",
+        "resource/aria2/linux/aria2c"
+      ],
       "target": [
         "AppImage",
         "deb"

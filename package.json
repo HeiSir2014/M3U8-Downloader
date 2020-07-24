@@ -58,9 +58,6 @@
       "!resource/aria2/*"
     ],
     "asar": true,
-    "electronDownload":{
-      "cache":"D:\\Documents\\Downloads"
-    },
     "win": {
       "target": [
         {

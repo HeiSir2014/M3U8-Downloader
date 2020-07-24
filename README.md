@@ -61,13 +61,8 @@ QQ交流群：341972319
 
 # 下载可执行包
 
-目前仅编译了Windows 和 Mac 版本。
-
 ## [推荐] 蓝奏下载
-## [Windows 安装包](https://tools.heisir.cn/HLSDownload/download.html?platform=win)  |  [Windows 绿色版](https://tools.heisir.cn/HLSDownload/download.html?platform=win-zip)  |  [MacOS 安装包](https://tools.heisir.cn/HLSDownload/download.html?platform=mac)
-
-## [备份] coding.net 下载
-## [Windows 安装包](https://heisir-01.coding.net/api/share/download/f0ce6bff-62f7-4ac4-884b-14624ce5384c)  |  [Windows 绿色版](https://heisir-01.coding.net/api/share/download/ae0d3071-188e-4eee-873f-3a200ca7004c)  |  [MacOS 安装包](https://heisir-01.coding.net/api/share/download/684b56a8-5462-4c8f-9a72-3cf99545b916)
+## [Win 、Linux、MacOS 下载](https://tools.heisir.cn/HLSDownload/download.html)
 
 # 运行源码
 ### NodeJS开发环境搭建

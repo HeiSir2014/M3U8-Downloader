@@ -608,9 +608,9 @@ class QueueObject {
 							let key_uri_ = path.join(fileDir,key_uri);
 							if(!fs.existsSync(key_uri_))
 							{
-								var me = key_uri.match(/[^\\\/\?]{1,}\?|$/i);
+								var me = key_uri.match(/([^\\\/\?]{1,})(\?|$)/i);
 								if(me && me.length > 1){
-									key_uri_ = path.join(fileDir,me[0].replace(/\?$/,'')); 
+									key_uri_ = path.join(fileDir,me[1]); 
 								}
 								if(!fs.existsSync(key_uri_))
 								{
@@ -929,7 +929,7 @@ async function startDownloadLive(object) {
 	let myKeyIV = object.myKeyIV;
 	let url = object.url;
 	if(!taskName){
-		taskName = id;
+		taskName = `${id}`;
 	}
 	let dir = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""), 'download/'+taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,""));
 	if(globalConfigSaveVideoDir)

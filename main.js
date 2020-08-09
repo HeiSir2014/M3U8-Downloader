@@ -962,7 +962,7 @@ async function startDownloadLive(object) {
 	configVideos.splice(0,0,video);
 	fs.writeFileSync(globalConfigVideoPath,JSON.stringify(configVideos));
 
-	if(nId == null)
+	if(!object.id)
 	{
 		mainWindow.webContents.send('task-notify-create',video);
 	}

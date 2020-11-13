@@ -17,6 +17,10 @@ document.body.onload = function(){
         video:videosrc
     };
     new ckplayer(videoObject);
+
+    var title = videosrc.replace(/.*\//g,'').replace(/.*\\/g,'');
+    document.head.title = title;
+    document.querySelector(".player .title").innerHTML = `[ ${title} ] 正在播放...`;
 };
 
 

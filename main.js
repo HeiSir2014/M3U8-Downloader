@@ -420,7 +420,7 @@ ipcMain.on('task-add-muti', async function (event, object) {
 
 	let info = '解析资源失败！';
 	let code = -1;
-
+	let iidx = 0;
 	m3u8_urls.split(/\r|\n/g).forEach( urls=>{
 		if(urls != '')
 		{
@@ -470,7 +470,8 @@ ipcMain.on('task-add-muti', async function (event, object) {
 
 				_obj.headers = _headers;
 
-				startDownload(_obj);
+				startDownload(_obj,iidx);
+				iidx = iidx + 1;
 			}
 		}
 	})
@@ -721,8 +722,8 @@ function queue_callback(that,callback)
 	that.callback(callback);
 }
 
-async function startDownload(object) {
-	let id = !object.id ? new Date().getTime():object.id;
+async function startDownload(object,iidx) {
+	let id = !object.id ? (iidx != null ? (new Date().getTime() + iidx): new Date().getTime()):object.id;
 	let headers = object.headers;
 	let url_prefix = object.url_prefix;
 	let taskName = object.taskName;

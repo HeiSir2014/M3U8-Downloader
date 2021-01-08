@@ -166,9 +166,13 @@ html,body,#app,#app section,#app section .main{
 .heisir .main .TaskList{
     height: calc(100% - 70px);
     margin: 0px auto;
-    padding: 10px;
+    padding: 10px 0px;
     overflow-y: auto;
     border-radius: 0px;
+    margin-top: 10px;
+    background-color: #f8f8f8;
+    margin-left: 4%;
+    margin-right: 4%;
 }
 .heisir .main .TaskList .item{
     width: 100%;
@@ -179,6 +183,7 @@ html,body,#app,#app section,#app section .main{
     padding: 5px;
     text-align: left;
     margin: 0 0 10px 0;
+    border-bottom: solid 1px #F6F6F6;
 }
 
 .heisir .main .TaskList .item .m3u8{

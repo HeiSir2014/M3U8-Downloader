@@ -10,6 +10,7 @@
     "crypto-js": "^4.0.0",
     "dateformat": "^3.0.3",
     "download": "^8.0.0",
+    "electron-context-menu": "^2.4.0",
     "electron-is-dev": "^1.2.0",
     "ffmpeg-static": "^4.2.5",
     "fluent-ffmpeg": "^2.1.2",

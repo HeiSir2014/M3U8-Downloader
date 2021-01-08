@@ -50,29 +50,13 @@
                     <el-tabs type="border-card" v-model="tabPane">
                         <el-tab-pane label="M3U8视频下载">
                             <el-row :gutter="8">
-                                <el-col :span="2" :offset="1">
-                                    <span style="line-height: 40px;float: right;">视频源</span>
-                                </el-col>
-                                <el-col :span="16">
-                                    <div @drop="dropM3U8File" @dragover.prevent @dragenter.prevent>
-                                        <el-input placeholder="输入在线网络视频源URL，或将M3U8文件拖拽至此" v-model="m3u8_url"
-                                        draggable="false">
-                                            <i slot="prefix" class="el-input__icon el-icon-link"></i>
-                                            <i slot="suffix" class="el-input__icon el-icon-folder-opened" @click="clickSelectM3U8"></i>
-                                        </el-input>
-                                    </div>
-                                </el-col>
-                                <!--
-                                <el-col :span="3">
-                                    <el-button class="mybutton" type="warning" icon="el-icon-s-tools" @click="dlg_header_visible = true">
-                                        自定义设置</el-button>
-                                </el-col>
-                                -->
-                                <el-col :span="3">
+                                <el-col :span="3" :offset="1">
                                     <el-button class="mybutton" type="primary" icon="el-icon-news" @click="clickNewTask">新建下载</el-button>
                                 </el-col>
+                                <el-col :span="4" :offset="1">
+                                    <el-button class="mybutton" type="danger" icon="el-icon-news" @click="clickClearTask">清空所有任务</el-button>
+                                </el-col>
                             </el-row>
-                            <br>
                             <ul class="list TaskList" style="overflow:auto">
                                 <li v-for="o in allVideos" :key="o.id" class="item">
                                     <div class="m3u8"></div>
@@ -100,10 +84,18 @@
                             <el-dialog title="新建下载任务" :visible.sync="dlg_newtask_visible" width="60%" :modal="true"
                                 :close-on-click-modal="false" :close-on-press-escape="false" :center="false">
                                 <el-form label-width="80px">
+                                    <el-form-item label="视频源" label-position="right">
+                                        <div @drop="dropM3U8File" @dragover.prevent @dragenter.prevent>
+                                            <el-input placeholder="输入在线网络视频源URL，或将M3U8文件拖拽至此" v-model="m3u8_url"
+                                            draggable="false">
+                                                <i slot="prefix" class="el-input__icon el-icon-link"></i>
+                                                <i slot="suffix" class="el-input__icon el-icon-folder-opened" @click="clickSelectM3U8"></i>
+                                            </el-input>
+                                        </div>
+                                    </el-form-item>
                                     <el-form-item label="任务名" label-position="right">
                                         <el-input type="text" placeholder="[可空] 默认当前时间戳" v-model="taskName"></el-input>
                                     </el-form-item>
-                                    
                                     <el-form-item label="URL前缀" label-position="right" v-if="m3u8_url.startsWith('file:///')">
                                         <el-tooltip effect="light" placement="top-start">
                                             <div slot="content">如果M3U8文件是从网上直接下载下来的，TS流是在网络上的且M3U8文件里没有URL(http)前缀，就需要填写<br /><br />
@@ -278,11 +270,15 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                         </el-tab-pane>
                         <el-tab-pane label="交流咨询">
                             <el-row :gutter="8">
-                                <el-col :span="24" >
+                                <el-col :span="22" >
                                     <el-alert
                                     title="警示：【天网恢恢疏而不漏】遵纪守法是每位公民应尽的义务，严禁在此发布违规违法内容，否则后果自负！违规内容举报QQ：1586462"
                                     type="warning"
                                     :center="true" :closable="false" show-icon>
+                                </el-alert>
+                                </el-col>
+                                <el-col :span="2" >
+                                    <el-button class="mybutton" type="success" @click="clickRefreshComment">刷新</el-button>
                                 </el-alert>
                                 </el-col>
                             </el-row>
@@ -308,10 +304,10 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                                 <el-col :span="4">
                                     <el-button class="mybutton" type="primary" icon="el-icon-view" @click="clickOpenLogDir">查看日志目录</el-button>
                                 </el-col>
-                                <el-col :span="4" :offset="1">
+                                <!--<el-col :span="4" :offset="1">
                                     <span style="line-height: 40px;float: right;">FFMPEG</span>
                                 </el-col>
-                                <!--
+                                
                                 <el-col :span="9">
                                     <el-input placeholder="FFMPEG" v-model="config_ffmpeg" :readonly="true" ></el-input>
                                 </el-col>-->

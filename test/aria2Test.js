@@ -38,8 +38,8 @@ const systemConfig = {
     'check-certificate': false,
     'continue': true,
     'dir': app.getPath('downloads'),
-    'max-concurrent-downloads': 5,
-    'max-connection-per-server': 10,
+    'max-concurrent-downloads': 120,
+    'max-connection-per-server': 5,
     'max-download-limit': 0,
     'max-overall-download-limit': 0,
     'max-overall-upload-limit': '256K',
@@ -52,7 +52,7 @@ const systemConfig = {
     'seed-time': 60,
     'split': 10,
     'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36Transmission/2.94'
-  }
+}
 function transformConfig (config) {
     const result = []
     for (const [k, v] of Object.entries(config)) {
@@ -63,11 +63,7 @@ function transformConfig (config) {
     return result
 }
 
-let cmds = [aria2_app, `--conf-path=${aria2_config}`, `--save-session=${sessionPath}`];
-if(fs.existsSync(sessionPath))
-{
-    cmds.push(`--input-file=${sessionPath}`);
-}
+let cmds = [aria2_app, `--conf-path=${aria2_config}`];
 
 cmds = [ ...cmds, ...transformConfig(systemConfig) ];
 logger.debug(cmds.join(' '));
@@ -84,39 +80,44 @@ let instance = forever.start(cmds,{
     silent: false
 });
 
-const { child } = instance
-logger.info('Engine pid:', child.pid)
+let aria2 = new Aria2({port:16801});
 
 instance.on('error', (err) => {
   logger.info(`Engine error: ${err}`)
 })
 
 instance.on('start', function (process, data) {
-  logger.info('Engine started' ) 
+    const { child } = instance
+    logger.info('Engine pid:', child.pid)
+    logger.info('Engine started' )
+
+aria2.open().then(() => console.log("aria2 open")).catch(err => console.log("aria2 error", err));
+  
+  [
+      'onDownloadStart',
+      'onDownloadPause',
+      'onDownloadStop',
+      'onDownloadComplete',
+      'onDownloadError',
+      'onBtDownloadComplete'
+  ].forEach((notification) => {
+      aria2.on(notification, (params) => {
+          console.log('aria2', notification, params)
+      })
+  })
+  
+  aria2.call ("addUri",[ 'https://tools.heisir.cn/HLSDownload/ChromeVideoPlugin.crx' ],{ dir: app.getPath('downloads') , out: "123.crx", split: "64"})
+  
 })
 
 instance.on('stop', function (process) {
   logger.info('Engine stopped')
 })
 
-let aria2 = new Aria2({port:16801});
+setInterval(()=>{
 
-aria2
-.open()
-.then(() => console.log("aria2 open"))
-.catch(err => console.log("aria2 error", err));
+    aria2.call ("addUri",[ 'https://tools.heisir.cn/HLSDownload/ChromeVideoPlugin.crx' ],{ dir: app.getPath('downloads') , out: "123.crx", split: "64"})
+  
 
-[
-    'onDownloadStart',
-    'onDownloadPause',
-    'onDownloadStop',
-    'onDownloadComplete',
-    'onDownloadError',
-    'onBtDownloadComplete'
-].forEach((notification) => {
-    aria2.on(notification, (params) => {
-        console.log('aria2', notification, params)
-    })
-})
+},5000);
 
-aria2.call("addUri",[ 'https://tools.heisir.cn/HLSDownload/ChromeVideoPlugin.crx' ],{ dir: app.getPath('downloads') , out: "123.crx", split: "64"})

@@ -1,5 +1,5 @@
 const { ipcRenderer } = require('electron');
-const { shell } = require('electron').remote;
+const { shell } = require('electron');
 
 const _app = new Vue({
     el: '#app',
@@ -127,14 +127,7 @@ const _app = new Vue({
                 return;
             }
 
-            if( this.m3u8_url != '')
-            {
-                this.dlg_newtask_visible = true;
-            }
-            else
-            {
-                this.$message({title: '提示',type: 'error',message: "请输入正确的M3U8 URL",offset:100,duration:1000});
-            }
+            this.dlg_newtask_visible = true;
         },
         clickNewTaskOK:function(e){
             if( this.m3u8_url != '')
@@ -153,6 +146,10 @@ const _app = new Vue({
             {
                 this.$message({title: '提示',type: 'error',message: "请输入正确的M3U8-URL或者导入(.m3u8)文件",offset:100,duration:1000});
             }
+        },
+        clickClearTask:function(e){
+            ipcRenderer.send('task-clear');
+            this.allVideos = [];
         },
         clickNewTaskMuti:function(e){
             if(!this.config_save_dir)
@@ -272,6 +269,29 @@ const _app = new Vue({
                 this.ts_dir = e.dataTransfer.files[0].path;
                 ipcRenderer.send('open-select-ts-dir',e.dataTransfer.files[0].path);
             }
+        },
+        clickRefreshComment:function(e){
+            var GUEST_INFO = ['nick','mail','link'];
+            var guest_info = 'nick'.split(',').filter(function(item){
+                return GUEST_INFO.indexOf(item) > -1
+            });
+            console.log(guest_info)
+            var notify = 'false' == true;
+            var verify = 'false' == true;
+            new Valine({
+                el: '.vcomment',
+                notify: notify,
+                verify: verify,
+                appId: "dYhmAWg45dtYACWfTUVR2msp-gzGzoHsz",
+                appKey: "SbuBYWY21MPOSVUCTHdVlXnx",
+                placeholder: "可以在这里进行咨询交流",
+                pageSize:'100',
+                avatar:'mm',
+                lang:'zh-cn',
+                meta:guest_info,
+                recordIP:true,
+                path:'/m3u8-downloader'
+            });
         }
     },
     mounted:function(){

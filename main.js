@@ -18,12 +18,15 @@ const winston = require('winston');
 const nconf = require('nconf');
 const { dir } = require('console');
 let ffmpegPath = require('ffmpeg-static');
+const contextMenu = require('electron-context-menu');
+const Aria2 = require('aria2');
+const forever = require('forever-monitor');
+
+contextMenu({showCopyImage:false,showCopyImageAddress:false,showInspectElement:false,showServices:false});
 
 if(!isDev){
 	ffmpegPath = ffmpegPath.replace('app.asar/','').replace('app.asar\\','');
 }
-
-
 
 let isdelts = true;
 let mainWindow = null;
@@ -37,11 +40,28 @@ let globalCond ={};
 const globalConfigDir = app.getPath('userData');
 const globalConfigPath = path.join(globalConfigDir,'config.json');
 const globalConfigVideoPath = path.join(globalConfigDir,'config_videos.json');
+const aria2Dir = path.join(app.getAppPath(),"resource","aria2",process.platform);
+const aria2_app = path.join(aria2Dir,"aria2c.exe");
+const aria2_config = path.join(aria2Dir,"aria2.conf");
+let 	aria2Client = null;
+
 let globalConfigSaveVideoDir = '';
 
 const httpTimeout = {socket: 600000, request: 600000, response:600000};
 
 const referer = `https://tools.heisir.cn/M3U8Soft-Client?v=${package_self.version}`;
+
+function transformConfig (config) {
+    const result = []
+    for (const [k, v] of Object.entries(config)) {
+        if (v !== '') {
+        result.push(`--${k}=${v}`)
+        }
+    }
+    return result
+}
+
+
 
 // 单例应用程序
 if (!app.requestSingleInstanceLock()) {
@@ -130,7 +150,10 @@ function createWindow() {
 	mainWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
 		event.preventDefault()
 		shell.openExternal(url);
-	})
+	});
+	mainWindow.webContents.on('context-menu',(event,params)=>{
+
+	});
 }
 function createPlayerWindow(src) {
 	if(playerWindow == null)
@@ -274,6 +297,63 @@ app.on('ready', () => {
 			logger.error(error)
 		}
 	})();
+
+
+	const EMPTY_STRING = '';
+	const systemConfig = {
+		'all-proxy': EMPTY_STRING,
+		'allow-overwrite': false,
+		'auto-file-renaming': true,
+		'check-certificate': false,
+		'continue': true,
+		'dir': app.getPath('downloads'),
+		'max-concurrent-downloads': 120,
+		'max-connection-per-server': 5,
+		'max-download-limit': 0,
+		'max-overall-download-limit': 0,
+		'max-overall-upload-limit': '256K',
+		'min-split-size': '1M',
+		'no-proxy': EMPTY_STRING,
+		'pause': true,
+		'rpc-listen-port': 16801,
+		'rpc-secret': EMPTY_STRING,
+		'seed-ratio': 1,
+		'seed-time': 60,
+		'split': 10,
+		'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36Transmission/2.94'
+	}
+
+
+	let cmds = [aria2_app, `--conf-path=${aria2_config}`];
+	cmds = [...cmds, ...transformConfig(systemConfig) ];
+	logger.debug(cmds.join(' '));
+
+	let instance = forever.start(cmds,{
+		max:10,
+		parser: function (command, args) {
+			logger.debug(command,args);
+			return {
+				command: command,
+				args: args
+			}
+		},
+		silent: false
+	});
+	instance.on('start', function (process, data) {
+		let aria2 = new Aria2({port:16801});
+		aria2.open().then(() => {
+			aria2Client = aria2;
+			[
+				'onDownloadStart',
+				'onDownloadComplete',
+				'onDownloadError',
+			].forEach((notification) => {
+				aria2.on(notification, (params) => {
+					console.log('aria2', notification, params)
+				})
+			})
+		}).catch(err => console.log("aria2 connect error", err));
+	});
 });
 
 // 当全部窗口关闭时退出。
@@ -329,6 +409,14 @@ ipcMain.on('get-all-videos', function (event, arg) {
 
 ipcMain.on('open-log-dir', function (event, arg) {
 	showDirInExploer(path.join(globalConfigDir,'logs'))
+});
+
+ipcMain.on('task-clear', async function (event, object) {
+	configVideos.forEach((video)=>{
+		globalCond[video.id] = false;
+	})
+	configVideos = [];
+	fs.writeFileSync(globalConfigVideoPath,JSON.stringify(configVideos));
 });
 
 ipcMain.on('task-add', async function (event, object) {
@@ -1083,8 +1171,6 @@ async function startDownloadLive(object) {
 										video.status = "已完成";
 										mainWindow.webContents.send('task-notify-end',video);
 
-
-
 										fs.writeFileSync(globalConfigVideoPath,JSON.stringify(configVideos));
 									})
 									.on('progress', logger.info);
@@ -1164,7 +1250,7 @@ ipcMain.on('delvideo', function (event, id) {
 		if(Element.id==id)
 		{
 			try {
-				if(fs.existsSync(Element.dir)) {
+				if(false && fs.existsSync(Element.dir)) {
 					var files = fs.readdirSync(Element.dir)
 					files.forEach(e=>{
 						//fs.unlinkSync(path.join(Element.dir,e));

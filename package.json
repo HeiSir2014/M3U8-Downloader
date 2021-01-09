@@ -25,7 +25,7 @@
     "winston": "^3.3.2"
   },
   "devDependencies": {
-    "electron": "10.1.3",
+    "electron": "^11.1.1",
     "electron-builder": "^22.7.0"
   },
   "scripts": {
@@ -41,8 +41,8 @@
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
     "artifactName": "${productName}-${os}-${arch}-${version}.${ext}",
-    "electronVersion": "9.0.5",
-    "copyright": "Copyright © year ${author}",
+    "electronVersion": "11.1.1",
+    "copyright": "Copyright © 2021 ${author}",
     "compression": "normal",
     "directories": {
       "output": "dist"

@@ -56,6 +56,9 @@
                                 <el-col :span="4" :offset="1">
                                     <el-button class="mybutton" type="danger" icon="el-icon-news" @click="clickClearTask">清空所有任务</el-button>
                                 </el-col>
+                                <el-col :span="4" :offset="11">
+                                    <div class="speed el-icon-download"> {{downSpeed}}</div>
+                                </el-col>
                             </el-row>
                             <ul class="list TaskList" style="overflow:auto">
                                 <li v-for="o in allVideos" :key="o.id" class="item">
@@ -67,13 +70,15 @@
                                     <div class="status">
                                         <span >状态：</span><span class="value">{{o.status}}</span>
                                     </div>
-                                    <div class="opt top">
-                                        <input class="opendir" opt="opendir" :data="o.dir" type="button" value="打开文件夹" @click="clickItemOptData">
-                                    </div>
-                                    <div class="opt bottom">
-                                        <input class="del" opt="delvideo" :data="o.id" type="button" value="删除" @click="clickItemOptData">
-                                        <input class="play" opt="playvideo" :data="o.videopath" type="button" value="播放" @click="clickItemOptData">
-                                        <input class="StartStop" opt="StartOrStop" :data="o.id" type="button" value="停止" @click="clickItemOptData">
+                                    <div class="opt">
+                                        <div class="top">
+                                            <input class="opendir" opt="opendir" :data="o.dir" type="button" value="打开文件夹" @click="clickItemOptData">
+                                        </div>
+                                        <div class="bottom">
+                                            <input class="del" opt="delvideo" :data="o.id" type="button" value="删除" @click="clickItemOptData">
+                                            <input class="play" opt="playvideo" :data="o.videopath" type="button" value="播放" @click="clickItemOptData">
+                                            <input class="StartStop" opt="StartOrStop" :data="o.id" type="button" value="停止" @click="clickItemOptData">
+                                        </div>
                                     </div>
                                 </li>
                                 <el-alert v-if="!allVideos.length" style="margin-top: 10px; height: 100px; line-height: 1;"

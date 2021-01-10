@@ -115,6 +115,29 @@ html,body,#app,#app section,#app section .main{
     padding: 0px !important;
 }
 
+.main .speed{
+    color: #0094ea;
+    font-size: 16px;
+    border-radius: 0px;
+    padding: 10px 0px;
+    user-select: none;
+    /* background-color: #F0F9EB; */
+    text-align: left;
+    box-sizing: border-box;
+    width: 100%;
+    white-space: nowrap;
+    position: relative;
+    padding-left: 38px;
+}
+
+.main .speed::before
+{
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    color: #67C23A;
+}
+
 .main .el-tabs__header{
     -webkit-app-region: drag;
 }
@@ -237,18 +260,28 @@ html,body,#app,#app section,#app section .main{
     position: absolute;
     left: 500px;
     bottom: 5px;
+    
+    white-space: nowrap;
 }
 .heisir .main .TaskList .item .opt{
     position: absolute;
     font-size: 15px;
+    right: 10px;
+    top: 0px;
+    background-color: #F8F8F8;
+    padding: 2px;
+    height: 100%;
+    width: 170px;
 }
 
-.heisir .main .TaskList .item .opt.bottom{
+.heisir .main .TaskList .item .opt .bottom{
+    position: absolute;
     right: 10px;
     bottom: 5px;
 }
 
-.heisir .main .TaskList .item .opt.top{
+.heisir .main .TaskList .item .opt .top{
+    position: absolute;
     right: 10px;
     top: 5px;
 }

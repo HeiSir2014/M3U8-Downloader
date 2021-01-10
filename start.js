@@ -27,7 +27,8 @@ const _app = new Vue({
             tsMergeStatus:'',
             tsMergeMp4Path:'',
             tsMergeMp4Dir:'',
-            tsTaskName:''
+            tsTaskName:'',
+            downSpeed:'0 MB/s'
         }
     },
     methods:{
@@ -36,7 +37,11 @@ const _app = new Vue({
             ipcRenderer.on('get-version-reply',function(event,data){
                 that.version = data;
             });
-            
+        
+            ipcRenderer.on('notify-download-speed',function(event,data){
+                that.downSpeed = data;
+            });
+
             ipcRenderer.on('get-all-videos-reply',function(event,data){
                 that.allVideos = data;
             });

@@ -44,6 +44,7 @@ const aria2Dir = path.join(app.getAppPath(),"resource","aria2",process.platform)
 const aria2_app = path.join(aria2Dir,"aria2c.exe");
 const aria2_config = path.join(aria2Dir,"aria2.conf");
 let 	aria2Client = null;
+let 	aria2Server = null;
 
 let globalConfigSaveVideoDir = '';
 
@@ -250,11 +251,13 @@ app.on('ready', () => {
 			label: '退出',
 			type: 'normal',
 			click: () => {
+				
+				aria2Server && aria2Server.stop();
 				if (playerWindow) {
 					playerWindow.close();
 				}
 				mainWindow.close();
-				app.quit()
+				setTimeout(()=>{app.quit()},2000);
 			}
 		}
 	]);
@@ -298,14 +301,13 @@ app.on('ready', () => {
 		}
 	})();
 
-
 	const EMPTY_STRING = '';
 	const systemConfig = {
 		'all-proxy': EMPTY_STRING,
 		'allow-overwrite': false,
 		'auto-file-renaming': true,
 		'check-certificate': false,
-		'continue': true,
+		'continue': false,
 		'dir': app.getPath('downloads'),
 		'max-concurrent-downloads': 120,
 		'max-connection-per-server': 5,
@@ -322,7 +324,6 @@ app.on('ready', () => {
 		'split': 10,
 		'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36Transmission/2.94'
 	}
-
 
 	let cmds = [aria2_app, `--conf-path=${aria2_config}`];
 	cmds = [...cmds, ...transformConfig(systemConfig) ];
@@ -341,24 +342,40 @@ app.on('ready', () => {
 	});
 	instance.on('start', function (process, data) {
 		let aria2 = new Aria2({port:16801});
-		aria2.open().then(() => {
-			aria2Client = aria2;
-			[
-				'onDownloadStart',
-				'onDownloadComplete',
-				'onDownloadError',
-			].forEach((notification) => {
-				aria2.on(notification, (params) => {
-					console.log('aria2', notification, params)
-				})
-			})
-		}).catch(err => console.log("aria2 connect error", err));
+		aria2.open();
+		aria2.on('close',(e)=>{
+			console.log('----aria2 connect close----');
+			setTimeout(()=>aria2.open(),100);
+		});
+		aria2.on("onDownloadComplete", downloadComplete);
+		aria2Client = aria2;
+
+		setInterval(()=>{
+			aria2Client.call('getGlobalStat').then((result)=>{
+				if(result && result['downloadSpeed'])
+				{
+					var _speed = '';
+					var speed = parseInt(result['downloadSpeed']);
+					_speed = (speed < 1024 * 1024) ? Math.round(speed/1024) + ' KB/s': (speed/1024/1024).toFixed(2) + ' MiB/s'
+					mainWindow.webContents.send('notify-download-speed',_speed);
+				}
+			});
+		},1500);
 	});
+	aria2Server = instance;
 });
+
+function downloadComplete(e){
+	console.log('---- aria2 downloadComplete ----');
+	var gid = e[0]['gid'];
+
+	console.log(gid);
+}
 
 // 当全部窗口关闭时退出。
 app.on('window-all-closed', async () => {
 
+	console.log('window-all-closed')
 	let HMACCOUNT = nconf.get('HMACCOUNT');
 	HMACCOUNT && await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`,{headers:{"Referer": referer,"Cookie":"HMACCOUNT="+HMACCOUNT}});
 	
@@ -504,8 +521,6 @@ ipcMain.on('task-add-muti', async function (event, object) {
 		});
 	}
 
-
-
 	let info = '解析资源失败！';
 	let code = -1;
 	let iidx = 0;
@@ -566,8 +581,6 @@ ipcMain.on('task-add-muti', async function (event, object) {
 	info = `批量添加成功，正在下载...`;
 	event.sender.send('task-add-reply', { code: 0, message: info });
 });
-
-
 
 class QueueObject {
 	constructor() {
@@ -658,6 +671,18 @@ class QueueObject {
 					fs.copyFileSync(uri_ts.replace(/^file:\/\/\//,''),filpath_dl);
 				}
 				else{
+
+					var _headers = [];
+					if( that.headers )
+					{
+						for(var _key in that.headers)
+						{
+							_headers.push(_key + ": "+that.headers[_key] )
+						}
+					}
+					aria2Client && aria2Client.call("addUri", [uri_ts], { dir:that.dir, out: filename + ".dl", split: "16", header: _headers});
+
+					break;
 					await download (uri_ts, that.dir, {filename:filename + ".dl",timeout:httpTimeout,headers:that.headers}).catch((err)=>{
 						logger.error(err)
 						if(fs.existsSync(filpath_dl)) fs.unlinkSync( filpath_dl);
@@ -903,6 +928,7 @@ async function startDownload(object,iidx) {
 			}
 		};
 		qo.catch = function(){
+			return;
 			if(this.retry < 5)
 			{
 				tsQueues.push(this);

@@ -2,3 +2,4 @@
 yarn.lock
 yarn-*
 dist/
+.vscode

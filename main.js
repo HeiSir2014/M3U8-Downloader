@@ -152,9 +152,6 @@ function createWindow() {
 		event.preventDefault()
 		shell.openExternal(url);
 	});
-	mainWindow.webContents.on('context-menu',(event,params)=>{
-
-	});
 }
 function createPlayerWindow(src) {
 	if(playerWindow == null)

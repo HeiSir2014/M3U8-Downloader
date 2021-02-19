@@ -54,10 +54,10 @@
                                     <el-button class="mybutton" type="primary" icon="el-icon-news" @click="clickNewTask">新建下载</el-button>
                                 </el-col>
                                 <el-col :span="4" :offset="1">
-                                    <el-button class="mybutton" type="danger" icon="el-icon-news" @click="clickClearTask">清空所有任务</el-button>
+                                    <el-button class="mybutton" type="danger" icon="el-icon-news" @click="clickClearTask">清空下载任务( {{allVideos.length}} )</el-button>
                                 </el-col>
-                                <el-col :span="4" :offset="11">
-                                    <div class="speed el-icon-download"> {{downSpeed}}</div>
+                                <el-col v-show="false" :span="4" :offset="11">
+                                    <div class="speed el-icon-download">{{downSpeed}}</div>
                                 </el-col>
                             </el-row>
                             <ul class="list TaskList" style="overflow:auto">
@@ -92,11 +92,21 @@
                                     <el-form-item label="视频源" label-position="right">
                                         <div @drop="dropM3U8File" @dragover.prevent @dragenter.prevent>
                                             <el-input placeholder="输入在线网络视频源URL，或将M3U8文件拖拽至此" v-model="m3u8_url"
-                                            draggable="false">
+                                            draggable="false" @input="m3u8UrlChange" >
                                                 <i slot="prefix" class="el-input__icon el-icon-link"></i>
                                                 <i slot="suffix" class="el-input__icon el-icon-folder-opened" @click="clickSelectM3U8"></i>
                                             </el-input>
                                         </div>
+                                    </el-form-item>
+                                    <el-form-item v-if="playlists.length" label="* 画质" label-position="right">
+                                        <el-select v-model="playlistUri" placeholder="选择视频源" style="width: 100%;">
+                                            <el-option
+                                              v-for="playlist in playlists"
+                                              :key="playlist.uri"
+                                              :label="getPlaylistLabel(playlist)"
+                                              :value="playlist.uri">
+                                            </el-option>
+                                          </el-select>
                                     </el-form-item>
                                     <el-form-item label="任务名" label-position="right">
                                         <el-input type="text" placeholder="[可空] 默认当前时间戳" v-model="taskName"></el-input>
@@ -125,67 +135,16 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                                 </el-form>
                                 <div slot="footer" class="dialog-footer">
                                     <el-row :gutter="20">
-                                        <el-col :span="8" :offset="16">
+                                        <el-col :span="11" :offset="4">
+                                            <el-alert :title="addTaskMessage" type="error" :closable="false"></el-alert>
+                                        </el-col>
+                                        <el-col :span="8" :offset="1">
                                             <el-button type="primary" @click="clickNewTaskOK" style="width: 100%;">确 定</el-button>
                                         </el-col>
                                     </el-row>
                                 </div>
                             </el-dialog>
                         </el-tab-pane>
-                        <!--
-                        <el-tab-pane label="M3U8 本地文件">
-                            <el-row :gutter="8">
-                                <el-col :span="2" :offset="1">
-                                    <span style="line-height: 40px;float: right;">本地源:</span>
-                                </el-col>
-                                <el-col :span="17">
-                                    <div @drop="dropM3U8File" draggable @dragover.prevent @dragenter.prevent>
-                                        <el-input placeholder="单击浏览按钮 或 将文件拖拽至此" v-model="m3u8_file"
-                                        clearable >
-                                            <i slot="prefix" class="el-input__icon el-icon-document"></i>
-                                        </el-input>
-                                    </div>
-                                </el-col>
-                                <el-col :span="3">
-                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickOpenM3U8File">浏览文件</el-button>
-                                </el-col>
-                            </el-row>
-                            <br />
-                            <el-row :gutter="8">
-                                <el-col :span="2" :offset="1">
-                                    <span style="line-height: 40px;float: right;">URL前缀:</span>
-                                </el-col>
-                                <el-col :span="17">
-                                    <el-tooltip effect="light" placement="top-start">
-                                        <div slot="content">如果M3U8文件是从网上直接下载下来的，TS流是在网络上的且M3U8文件里没有URL(http)前缀，就需要填写<br /><br />
-                                            如果TS视频流在M3U8文件目录下，则不需要填写这块<br /></div>
-                                        <el-input placeholder="M3U8 URL前缀 例如：http://heisir.cn/cdn/123456/" v-model="m3u8_file_url_prefix"
-                                            clearable >
-                                        </el-input>
-                                    </el-tooltip>
-                                </el-col>
-                            </el-row>
-                            <br />
-                            <el-row :gutter="8">
-                                <el-col :span="2" :offset="1">
-                                    <span style="line-height: 40px;float: right;">私有KEY:</span>
-                                </el-col>
-                                <el-col :span="17">
-                                    <el-tooltip effect="light" placement="top-start">
-                                        <div slot="content">32位HEX格式KEY和32位IV值，IV值可空<br /></div>
-                                            <el-input type="text" placeholder="KEY和IV值(HEX格式)，不使用AES解密可不填写" v-model="myLocalKeyIV"></el-input>
-                                        </el-input>
-                                    </el-tooltip>
-                                </el-col>
-                            </el-row>
-                            <br />
-                            <el-row :gutter="8">
-                                <el-col :span="4" :offset="3">
-                                    <el-button class="mybutton" type="primary" icon="el-icon-folder-opened" @click="clickNewLocalTask">新建下载</el-button>
-                                </el-col>
-                            </el-row>
-                        </el-tab-pane>
-                        -->
                         <el-tab-pane label="M3U8批量下载">
                             <el-form label-width="130px" style="margin-right: 65px;">
                                 <el-form-item label="批量视频源" label-position="right">
@@ -309,13 +268,13 @@ Referer: http://www.host.com" v-model="headers"></el-input>
                                 <el-col :span="4">
                                     <el-button class="mybutton" type="primary" icon="el-icon-view" @click="clickOpenLogDir">查看日志目录</el-button>
                                 </el-col>
-                                <!--<el-col :span="4" :offset="1">
-                                    <span style="line-height: 40px;float: right;">FFMPEG</span>
+                                <el-col :span="4" :offset="1">
+                                    <span style="line-height: 40px;float: right;">HTTP代理</span>
                                 </el-col>
                                 
                                 <el-col :span="9">
-                                    <el-input placeholder="FFMPEG" v-model="config_ffmpeg" :readonly="true" ></el-input>
-                                </el-col>-->
+                                    <el-input placeholder="请输入HTTP代理(如：http://127.0.0.1:7890 )" v-model="config_proxy" @change="proxyChange"></el-input>
+                                </el-col>
                             </el-row>
                             <br>
                             <el-divider><i class="el-icon-coffee"></i></el-divider>

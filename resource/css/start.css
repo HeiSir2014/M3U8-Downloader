@@ -224,7 +224,7 @@ html,body,#app,#app section,#app section .main{
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    width: 80%;
+    width: calc(100% - 280px);
 }
 
 .heisir .main .TaskList .item .link input{
@@ -271,7 +271,7 @@ html,body,#app,#app section,#app section .main{
     background-color: #F8F8F8;
     padding: 2px;
     height: 100%;
-    width: 170px;
+    width: 200px;
 }
 
 .heisir .main .TaskList .item .opt .bottom{

@@ -15,6 +15,7 @@ const _app = new Vue({
             dlg_newtask_visible: false,
             config_save_dir:'',
             config_ffmpeg:'',
+            config_proxy:'',
             headers:'',
             myKeyIV:'',
             myLocalKeyIV:'',
@@ -28,7 +29,10 @@ const _app = new Vue({
             tsMergeMp4Path:'',
             tsMergeMp4Dir:'',
             tsTaskName:'',
-            downSpeed:'0 MB/s'
+            downSpeed:'0 MB/s',
+            playlists:[],
+            playlistUri:'',
+            addTaskMessage:''
         }
     },
     methods:{
@@ -49,6 +53,7 @@ const _app = new Vue({
             ipcRenderer.on('get-config-dir-reply',function(event,data){
                 that.config_save_dir = data.config_save_dir;
                 that.config_ffmpeg = data.config_ffmpeg;
+                data.config_proxy && (that.config_proxy = data.config_proxy);
             });
             ipcRenderer.on('open-select-m3u8-reply',function(event,data){
                 that.m3u8_url = data;
@@ -62,7 +67,18 @@ const _app = new Vue({
             });
 
             ipcRenderer.on('task-add-reply',function(event,data){
-                that.notifyTaskStatus(data.code,data.message);
+                if(data.code != 1)
+                {
+                    that.dlg_newtask_visible = false;
+                    that.taskName = '';
+                    that.m3u8_url = '';
+                    that.m3u8UrlChange();
+                    that.notifyTaskStatus(data.code,data.message);
+                    return;
+                }
+                that.playlists = data.playlists;
+                that.playlistUri = that.playlists[0].uri;
+                that.addTaskMessage = "请选择一种画质";
             });
             ipcRenderer.on('task-notify-create',function(event,data){
                 that.allVideos.splice(0,0,data);
@@ -131,21 +147,30 @@ const _app = new Vue({
                 this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
                 return;
             }
-
             this.dlg_newtask_visible = true;
+            this.taskName = '';
+            this.m3u8_url = '';
+            this.m3u8UrlChange();
         },
         clickNewTaskOK:function(e){
             if( this.m3u8_url != '')
             {
-                ipcRenderer.send('task-add', { url: this.m3u8_url,
+                let m3u8_url = this.m3u8_url;
+                if(this.playlistUri != '')
+                {
+                    const uri = this.playlistUri;
+                    m3u8_url = uri[0]=='/'?(m3u8_url.substr(0,m3u8_url.indexOf('/',10))+uri):uri;
+                }
+
+                ipcRenderer.send('task-add', { url: m3u8_url,
                      headers: this.headers,
                      myKeyIV: this.myKeyIV,
                      taskName: this.taskName,
                      taskIsDelTs:this.taskIsDelTs,
                      url_prefix:this.m3u8_url_prefix
                 });
-                this.dlg_newtask_visible = false;
-                this.taskName = '';
+
+                this.addTaskMessage = "正在检查链接..."
             }
             else
             {
@@ -190,6 +215,35 @@ const _app = new Vue({
                 that.value = that.value == "停止"?"重新开始":"停止";
             }
             ipcRenderer.send(that.getAttribute('opt'),that.getAttribute('data'));
+        },
+        getPlaylistLabel:function(playlist){
+            if(!playlist || !playlist.attributes) return '';
+            const attr = playlist.attributes;
+            if(attr.BANDWIDTH)
+            {
+                return `码率 - ${attr.BANDWIDTH}`;
+            }
+            if(attr.bandwidth)
+            {
+                return `码率 - ${attr.bandwidth}`;
+            }
+            if(attr.RESOLUTION)
+            {
+                return `分辨率 - ${attr.RESOLUTION.width}x${attr.RESOLUTION.height}`;
+            }
+            if(attr.resolution)
+            {
+                return `分辨率 - ${attr.resolution.width}x${attr.resolution.height}`;
+            }
+            return '链接 - ' + playlist.uri;
+        },
+        proxyChange:function(){
+            ipcRenderer.send('set-config',{key:'config_proxy',value:this.config_proxy});
+        },
+        m3u8UrlChange:function(){
+            this.playlists = [];
+            this.playlistUri = '';
+            this.addTaskMessage = "请输入M3U8视频源";
         },
         notifyTaskStatus:function(code,message){
             this.$notify({title: '提示',type: (code == 0? 'success':'error'),message: message,showClose: true,duration:3000,position:'bottom-right'});

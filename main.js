@@ -21,6 +21,7 @@ let ffmpegPath = require('ffmpeg-static');
 const contextMenu = require('electron-context-menu');
 const Aria2 = require('aria2');
 const forever = require('forever-monitor');
+const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 
 contextMenu({showCopyImage:false,showCopyImageAddress:false,showInspectElement:false,showServices:false});
 
@@ -45,6 +46,7 @@ const aria2_app = path.join(aria2Dir,"aria2c.exe");
 const aria2_config = path.join(aria2Dir,"aria2.conf");
 let 	aria2Client = null;
 let 	aria2Server = null;
+let    proxy_agent = null;
 
 let globalConfigSaveVideoDir = '';
 
@@ -267,6 +269,25 @@ app.on('ready', () => {
 
 	globalConfigSaveVideoDir = nconf.get('SaveVideoDir');
 
+	const config_proxy = nconf.get('config_proxy');
+	proxy_agent = config_proxy?{
+			http: new HttpProxyAgent({
+				keepAlive: true,
+				keepAliveMsecs: 1000,
+				maxSockets: 256,
+				maxFreeSockets: 256,
+				scheduling: 'lifo',
+				proxy: config_proxy
+			}),
+			https: new HttpsProxyAgent({
+				keepAlive: true,
+				keepAliveMsecs: 1000,
+				maxSockets: 256,
+				maxFreeSockets: 256,
+				scheduling: 'lifo',
+				proxy: config_proxy
+				})
+		}:null;
 
 	//百度统计代码
 	(async ()=>{
@@ -297,6 +318,7 @@ app.on('ready', () => {
 			logger.error(error)
 		}
 	})();
+	return;
 
 	const EMPTY_STRING = '';
 	const systemConfig = {
@@ -474,13 +496,26 @@ ipcMain.on('task-add', async function (event, object) {
 		parser.end();
 	}
 	else{
-		const response = await got(hlsSrc,{headers:_headers,timeout:httpTimeout}).catch(logger.error);
+		for (let index = 0; index < 3; index++)
 		{
-			if (response && response.body != null
-				&& response.body != '')
+			let response = await got(hlsSrc,{headers:_headers,timeout:httpTimeout,agent:proxy_agent}).catch(logger.error);
 			{
-				parser.push(response.body);
-				parser.end();
+				if (response && response.body != null
+					&& response.body != '')
+				{
+					parser.push(response.body);
+					parser.end();
+
+					if(parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length &&parser.manifest.playlists.length == 1)
+					{
+						let uri = parser.manifest.playlists[0].uri;
+						hlsSrc = uri[0]=='/'?(hlsSrc.substr(0,hlsSrc.indexOf('/',10))+uri):uri;
+						object.url = hlsSrc;
+						parser = new Parser();
+						continue;
+					}
+					break;
+				}
 			}
 		}
 	}
@@ -500,6 +535,12 @@ ipcMain.on('task-add', async function (event, object) {
 			info = `直播资源解析成功，即将开始缓存...`;
 			startDownloadLive(object);
 		}
+	}
+	else if(parser.manifest.playlists && parser.manifest.playlists.length &&  parser.manifest.playlists.length >= 1)
+	{
+		code = 1;
+		event.sender.send('task-add-reply', { code: code, message: '',playlists: parser.manifest.playlists});
+		return;
 	}
 	event.sender.send('task-add-reply', { code: code, message: info });
 });
@@ -677,10 +718,9 @@ class QueueObject {
 							_headers.push(_key + ": "+that.headers[_key] )
 						}
 					}
-					aria2Client && aria2Client.call("addUri", [uri_ts], { dir:that.dir, out: filename + ".dl", split: "16", header: _headers});
-
-					break;
-					await download (uri_ts, that.dir, {filename:filename + ".dl",timeout:httpTimeout,headers:that.headers}).catch((err)=>{
+					//aria2Client && aria2Client.call("addUri", [uri_ts], { dir:that.dir, out: filename + ".dl", split: "16", header: _headers});
+					//break;
+					await download (uri_ts, that.dir, {filename:filename + ".dl",timeout:httpTimeout,headers:that.headers,agent:proxy_agent}).catch((err)=>{
 						logger.error(err)
 						if(fs.existsSync(filpath_dl)) fs.unlinkSync( filpath_dl);
 					});
@@ -739,7 +779,7 @@ class QueueObject {
 
 						if(/^http/.test(key_uri))
 						{
-							await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout}).catch(console.error);
+							await download (key_uri, that.dir, { filename: "aes.key" ,headers:that.headers,timeout:httpTimeout,agent:proxy_agent}).catch(console.error);
 						}
 						else if(/^file:\/\/\//.test(key_uri))
 						{
@@ -863,13 +903,27 @@ async function startDownload(object,iidx) {
 		parser.end();
 	}
 	else{
-		const response = await got(url,{headers:headers,timeout:httpTimeout}).catch(logger.error);
-		if(response == null || response.body == null || response.body == '')
+		for (let index = 0; index < 3; index++)
 		{
-			return;
+			let response = await got(url,{headers:headers,timeout:httpTimeout,agent:proxy_agent}).catch(logger.error);
+			{
+				if (response && response.body != null
+					&& response.body != '')
+				{
+					parser.push(response.body);
+					parser.end();
+
+					if(parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length &&parser.manifest.playlists.length >= 1)
+					{
+						let uri = parser.manifest.playlists[0].uri;
+						url = uri[0]=='/'?(hlsSrc.substr(0,hlsSrc.indexOf('/',10))+uri):uri;
+						parser = new Parser();
+						continue;
+					}
+					break;
+				}
+			}
 		}
-		parser.push(response.body);
-		parser.end();
 	}
 
 
@@ -901,7 +955,7 @@ async function startDownload(object,iidx) {
 
 	if(!object.id)
 	{
-		mainWindow.webContents.send('task-notify-create',video);
+		mainWindow && mainWindow.webContents.send('task-notify-create',video);
 	}
 	globalCond[id] = true;
 	let segments = parser.manifest.segments;
@@ -925,7 +979,6 @@ async function startDownload(object,iidx) {
 			}
 		};
 		qo.catch = function(){
-			return;
 			if(this.retry < 5)
 			{
 				tsQueues.push(this);
@@ -1087,7 +1140,7 @@ async function startDownloadLive(object) {
 	while (globalCond[id]) {
 
 		try {
-			const response = await got(url,{headers:headers,timeout:httpTimeout}).catch(logger.error);
+			const response = await got(url,{headers:headers,timeout:httpTimeout,agent:proxy_agent}).catch(logger.error);
 			if(response == null || response.body == null || response.body == '')
 			{
 				break;
@@ -1147,7 +1200,7 @@ async function startDownloadLive(object) {
 
 						//let tsStream = await got.get(uri_ts, {responseType:'buffer', timeout:httpTimeout ,headers:headers}).catch(logger.error).body();
 
-						await download (uri_ts, dir, { filename: filename + ".dl", timeout:httpTimeout ,headers:headers}).catch((err)=>{
+						await download (uri_ts, dir, { filename: filename + ".dl", timeout:httpTimeout ,headers:headers,agent:proxy_agent}).catch((err)=>{
 							logger.error(err)
 							if(fs.existsSync( filpath_dl ))
 							{
@@ -1354,8 +1407,36 @@ ipcMain.on('setting_isdelts', function (event, arg) {
 ipcMain.on('get-config-dir', function (event, arg) {
 	event.sender.send("get-config-dir-reply",{
 		config_save_dir:globalConfigSaveVideoDir,
-		config_ffmpeg:ffmpegPath
+		config_ffmpeg:ffmpegPath,
+		config_proxy:nconf.get('config_proxy')
 	});
+})
+ipcMain.on('set-config', function (event, data) {
+	nconf.set(data.key,data.value);
+	nconf.save();
+
+	if(data.key == 'config_proxy')
+	{
+		const config_proxy = nconf.get('config_proxy');
+		proxy_agent = config_proxy?{
+				http: new HttpProxyAgent({
+					keepAlive: true,
+					keepAliveMsecs: 1000,
+					maxSockets: 256,
+					maxFreeSockets: 256,
+					scheduling: 'lifo',
+					proxy: config_proxy
+				}),
+				https: new HttpsProxyAgent({
+					keepAlive: true,
+					keepAliveMsecs: 1000,
+					maxSockets: 256,
+					maxFreeSockets: 256,
+					scheduling: 'lifo',
+					proxy: config_proxy
+					})
+			}:null;
+	}
 })
 
 ipcMain.on('open-config-dir', function (event, arg) {

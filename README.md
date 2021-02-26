@@ -1,7 +1,5 @@
 ![M3U8-Downloader-Build](https://img.shields.io/github/workflow/status/heisir2014/M3U8-Downloader/M3U8-Downloader-Build?style=flat-square)
-
 ![Release](https://img.shields.io/github/v/release/heisir2014/m3u8-downloader?style=flat-square)
-
 ![Download](https://img.shields.io/github/downloads/heisir2014/m3u8-downloader/total?style=flat-square)
 # M3U8-Downloader [直接下载](#下载可执行包)
 M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视频流的APP，功能特点如下：

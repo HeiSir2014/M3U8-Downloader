@@ -1010,7 +1010,6 @@ async function startDownload(object,iidx) {
 			let filpath = path.join(dir, `${ ((iSeg + 1) +'').padStart(6,'0') }.ts`);
 			if(fs.existsSync(filpath))
 			{
-				indexData += `file '${filpath}'\r\n`;
 				fileSegments.push(filpath);
 			}
 		}
@@ -1061,7 +1060,7 @@ async function startDownload(object,iidx) {
 
 			for (let i = 0; i < fileSegments.length; i++) {
 				let percent = Number.parseInt((i+1)*100/fileSegments.length);
-				video.status = `已完成，合并中[${percent}%]`;
+				video.status = `合并中[${percent}%]`;
 				mainWindow.webContents.send('task-notify-end',video);
 				let filePath = fileSegments[i];
 				fs.existsSync(filePath) && ffmpegInputStream.push(fs.readFileSync(filePath));

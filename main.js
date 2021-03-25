@@ -916,7 +916,7 @@ async function startDownload(object,iidx) {
 					if(parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length &&parser.manifest.playlists.length >= 1)
 					{
 						let uri = parser.manifest.playlists[0].uri;
-						url = uri[0]=='/'?(hlsSrc.substr(0,hlsSrc.indexOf('/',10))+uri):uri;
+						url = uri[0]=='/'?(url.substr(0,url.indexOf('/',10))+uri):uri;
 						parser = new Parser();
 						continue;
 					}
@@ -996,7 +996,7 @@ async function startDownload(object,iidx) {
 		}
 		tsQueues.push(qo);
 	}
-	tsQueues.drain(()=>{
+	tsQueues.drain(async ()=>{
 		if(!video.success)
 		{
 			return;
@@ -1005,67 +1005,74 @@ async function startDownload(object,iidx) {
 		logger.info('download success');
 		video.status = "已完成，合并中...";
 		mainWindow.webContents.send('task-notify-end',video);
-		let indexData = '';
-		
-		let filesegments = [];
+		let fileSegments = [];
 		for (let iSeg = 0; iSeg < segments.length; iSeg++) {
 			let filpath = path.join(dir, `${ ((iSeg + 1) +'').padStart(6,'0') }.ts`);
 			if(fs.existsSync(filpath))
 			{
 				indexData += `file '${filpath}'\r\n`;
-				filesegments.push(filpath);
+				fileSegments.push(filpath);
 			}
 		}
-		if(filesegments.length <= 0)
+		if(!fileSegments.length)
 		{
 			video.status = "下载失败，请检查链接有效性";
 			mainWindow.webContents.send('task-notify-end',video);
-
 			logger.error(`[${url}] 下载失败，请检查链接有效性`);
 			return;
 		}
-		fs.writeFileSync(path.join(dir,'index.txt'),indexData);
 		let outPathMP4 = path.join(dir,taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,"")+'.mp4');
-		let ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg.exe");
-		if(!fs.existsSync(ffmpegBin))
-		{
-			ffmpegBin = path.join(app.getAppPath().replace(/resources\\app.asar$/g,""),"ffmpeg");
-		}
+		let outPathMP4_ = path.join(globalConfigSaveVideoDir,taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g,"")+'.mp4');
 		if(fs.existsSync(ffmpegPath))
 		{
-			var p = spawn(ffmpegPath,["-f","concat","-safe","0","-i",`${path.join(dir,'index.txt')}`,"-c","copy","-f","mp4",`${outPathMP4}`]);
-			p.on("close",()=>{
-				if(fs.existsSync(outPathMP4))
-				{
-					video.videopath = outPathMP4;
-					video.status = "已完成"
-					mainWindow.webContents.send('task-notify-end',video);
-
-					if(video.taskIsDelTs)
-					{
-						let index_path = path.join(dir,'index.txt');
-						if(fs.existsSync(index_path))
-						{
-							fs.unlinkSync(index_path);
-						}
-						filesegments.forEach(fileseg=>{
-							if(fs.existsSync(fileseg))
-							{
-								fs.unlinkSync(fileseg);
-							}
-						});
-					}
-				}
-				else
-				{
-					video.videopath = outPathMP4;
-					video.status = "合成失败，可能是非标准加密视频源，请联系客服定制。"
-					mainWindow.webContents.send('task-notify-end',video);
-				}
-
+			let ffmpegInputStream = new FFmpegStreamReadable(null);
+			new ffmpeg(ffmpegInputStream)
+			.setFfmpegPath(ffmpegPath)
+			.videoCodec('copy')
+			.audioCodec('copy')
+			.format('mp4')
+			.save(outPathMP4)
+			.on('error', (error)=>{
+				logger.error(error)
+				video.videopath = "";
+				video.status = "合并出错，请尝试手动合并";
+				mainWindow.webContents.send('task-notify-end',video);
+				
 				fs.writeFileSync(globalConfigVideoPath,JSON.stringify(configVideos));
+			})
+			.on('end', function(){
+				logger.info(`${outPathMP4} merge finished.`)
+				video.videopath = "";
+				fs.existsSync(outPathMP4) && (fs.renameSync(outPathMP4, outPathMP4_),video.videopath = outPathMP4_);
+				video.status = "已完成"
+				mainWindow.webContents.send('task-notify-end',video);
+				if(video.taskIsDelTs)
+				{
+					let index_path = path.join(dir,'index.txt');
+					fs.existsSync(index_path) && fs.unlinkSync(index_path);
+					fileSegments.forEach(item => fs.existsSync(item) && fs.unlinkSync(item));
+					fs.rmdirSync(dir);
+				}
+				fs.writeFileSync(globalConfigVideoPath,JSON.stringify(configVideos));
+			})
+			.on('progress', (info)=>{
+				logger.info(JSON.stringify(info));
 			});
-			p.on("data",logger.info);
+
+			for (let i = 0; i < fileSegments.length; i++) {
+				let percent = Number.parseInt((i+1)*100/fileSegments.length);
+				video.status = `已完成，合并中[${percent}%]`;
+				mainWindow.webContents.send('task-notify-end',video);
+				let filePath = fileSegments[i];
+				fs.existsSync(filePath) && ffmpegInputStream.push(fs.readFileSync(filePath));
+				while(ffmpegInputStream._readableState.length > 0)
+				{
+					await sleep(100);
+				}
+				console.log("push " + percent);
+			}
+			console.log("push(null) end");
+			ffmpegInputStream.push(null);
 		}
 		else{
 			video.videopath = outPathMP4;
@@ -1564,7 +1571,7 @@ ipcMain.on('start-merge-ts', async function (event, task) {
 		let ffmpegObj = new ffmpeg(ffmpegInputStream)
 		.setFfmpegPath(ffmpegPath)
 		.videoCodec(task.mergeType == 'speed'?'copy':'libx264')
-		.audioCodec('copy')
+		.audioCodec(task.mergeType == 'speed'?'copy':'aac')
 		.format('mp4')
 		.save(outPathMP4)
 		.on('error', (error)=>{

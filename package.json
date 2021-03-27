@@ -12,7 +12,7 @@
     "download": "^8.0.0",
     "electron-context-menu": "^2.4.0",
     "electron-is-dev": "^1.2.0",
-    "ffmpeg-static": "^4.2.5",
+    "ffmpeg-static": "^4.2.8",
     "fluent-ffmpeg": "^2.1.2",
     "forever-monitor": "^3.0.1",
     "got": "^11.5.0",
@@ -26,8 +26,8 @@
     "winston": "^3.3.2"
   },
   "devDependencies": {
-    "electron": "^11.1.1",
-    "electron-builder": "^22.7.0"
+    "electron": "^12.0.2",
+    "electron-builder": "^22.10.5"
   },
   "scripts": {
     "start": "electron .",
@@ -42,7 +42,6 @@
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
     "artifactName": "${productName}-${os}_${arch}-${version}.${ext}",
-    "electronVersion": "11.1.1",
     "copyright": "Copyright © 2021 ${author}",
     "compression": "normal",
     "directories": {

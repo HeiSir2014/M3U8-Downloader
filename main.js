@@ -186,7 +186,7 @@ function createPlayerWindow(src) {
 }
 
 // 9999.9999.9999 > 1.1.1 最高支持4位版本对比。  1.2.1 > 1.2.0   1.3 > 1.2.9999
-function version2float(v){
+function str2float(v){
 	let va = v.split('.');
 	if(va)
 	{
@@ -201,25 +201,24 @@ function version2float(v){
 	return 0;
 }
 
+let _updateInterval;
 async function checkUpdate(){
-	//const { body } =await got("https://raw.githubusercontent.com/HeiSir2014/M3U8-Downloader/master/package.json").catch(logger.error);
-	
-	const { body } =await got("https://tools.heisir.cn/HLSDownload/package.json").catch(logger.error);
-	if(body != '')
-	{
-		try {
-			let _package = JSON.parse(body);
-			if(version2float(_package.version) > version2float(package_self.version))
-			{
-				if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
-				{
-					shell.openExternal("https://tools.heisir.cn/HLSDownload/download.html");
-					return;
-				}
-			}
-		} catch (error) {
-			logger.error(error);
+	const { body } = await got("https://tools.heisir.cn/HLSDownload/package.json").catch(logger.error);
+	if(!body) return;
+	try {
+		let _package = JSON.parse(body);
+		if(str2float(_package.version) <= str2float(package_self.version))
+			return;
+		
+		_updateInterval && (clearInterval(_updateInterval),_updateInterval = null);
+
+		if(dialog.showMessageBoxSync(mainWindow,{type:'question',buttons:["Yes","No"],message:`检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`}) == 0)
+		{
+			shell.openExternal("https://tools.heisir.cn/HLSDownload/download.html");
+			return;
 		}
+	} catch (error) {
+		logger.error(error);
 	}
 }
 app.on('ready', () => {
@@ -293,8 +292,7 @@ app.on('ready', () => {
 	(async ()=>{
 		try {
 			checkUpdate();
-
-			setInterval(checkUpdate,600000);
+			_updateInterval = setInterval(checkUpdate,600000);
 
 			let HMACCOUNT = nconf.get('HMACCOUNT');
 			if(!HMACCOUNT) HMACCOUNT = '';

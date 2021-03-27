@@ -1,3 +1,4 @@
+
 ![M3U8-Downloader-Build](https://img.shields.io/github/workflow/status/heisir2014/M3U8-Downloader/M3U8-Downloader-Build?style=flat-square)
 [![Release](https://img.shields.io/github/v/release/heisir2014/m3u8-downloader?style=flat-square)](https://github.com/HeiSir2014/M3U8-Downloader/releases/latest)
 [![Download](https://img.shields.io/github/downloads/heisir2014/m3u8-downloader/total?style=flat-square)](https://github.com/HeiSir2014/M3U8-Downloader/releases/latest)
@@ -10,48 +11,52 @@ M3U8-Downloader是基于Electron框架开发的一款可以下载、播放HLS视
 | 自定义Http协议头下载 | ✓ |
 | 自定义KEY和IV解密 | ✓ |
 | 本地M3U8文件下载 | ✓ |
-| HLS协议直播源 | ✓ |
+| M3U8 直播源 | ✓ |
 | 标准 AES-128-CBC加密 | ✓ |
 | 标准 AES-196-CBC加密 | ✓ |
 | 标准 AES-256-CBC加密 | ✓ |
 | 非标准 AES-*-CBC加密 | ㄨ(可定制) |
+| 网页嗅探视频源 | ✓ |
 
 
 <div align="center">
-	<br>
-	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-3-1.gif?raw=true" alt="M3U8-Downloader">
-	<br>
-</div>
-<div align="center">
-	<br>
-	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-3-2.gif?raw=true" alt="M3U8-Downloader">
-	<br>
+    <br>
+    <img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-3-1.gif?raw=true" alt="M3U8-Downloader">
+    <br>
 </div>
 
-<div align="center">
-	<br>
-	<img width="739" src="https://github.com/HeiSir2014/M3U8-Downloader/blob/master/resource/HLSDownloadShow-4.gif?raw=true" alt="M3U8-Downloader">
-	<br>
-</div>
+# 功能规划
 
-# 流程原理图
-
----
-
-<div align="center">
-	<br>
-	<img width="1024" src="https://github.com/HeiSir2014/M3U8-Downloader/raw/master/resource/flowchart.png" alt="M3U8-Downloader">
-	<br>
-</div>
+```mermaid
+flowchart LR
+    A1("M3U8-Downloader") ---> B1("MP4、M3U8、MPD下载")
+    B1 ---> C1(自定义 文件名)
+    B1 ---> C2(自定义 Http Header)
+    C2 ---> D1("Referer、Cookies、User-Agent")
+    B1 ---> C3(自定义 AES Key)
+    B1 ---> C4(多码率选择)
+    B1 ---> C5(HTTP代理)
+    
+    A1 ---> B2("MP4、M3U8、MPD批量下载")
+    A1 ---> B3("TS文件合并")
+    A1 ---> B4("浏览器资源嗅探")
+    B4 ---> C6("FLV、MP4、MP3、WAV")
+    B4 ---> C7("HLS(M3U8、TS)")
+    B4 ---> C8("DASH(MPD)")
+    B4 ---> C12(模拟多终端)
+    A1 ---> B5("Settings")
+    B5 ---> C9(存储路径)
+    B5 ---> C10(设置代理)
+    B5 ---> C11(日志查看)
+```
+![mermaid-diagram-20210328004859](https://i.loli.net/2021/03/28/Ca5yhFQeTmG69DK.png)
 
 ---
 
 # 官网
 [M3U8-Downloader 官网](https://tools.heisir.cn/HLSDownload)
 
-QQ交流群：341972319
-
-[点我加QQ交流群](https://jq.qq.com/?_wv=1027&k=nhFrZBS0)
+QQ交流群：341972319 [QQ交流群](https://jq.qq.com/?_wv=1027&k=nhFrZBS0)
 
 # 获取M3U8视频地址
 

@@ -29,7 +29,7 @@ const _app = new Vue({
             tsMergeMp4Path:'',
             tsMergeMp4Dir:'',
             tsTaskName:'',
-            downSpeed:'0 MB/s',
+            downloadSpeed:'0 MB/s',
             playlists:[],
             playlistUri:'',
             addTaskMessage:''
@@ -38,6 +38,9 @@ const _app = new Vue({
     methods:{
         installEvent:function(e){
             let that = this;
+
+            ipcRenderer.on('message',this.message.bind(this));
+
             ipcRenderer.on('get-version-reply',function(event,data){
                 that.version = data;
             });
@@ -128,6 +131,14 @@ const _app = new Vue({
             ipcRenderer.send('get-version');
             ipcRenderer.send('get-all-videos');
             ipcRenderer.send('get-config-dir');
+        },
+        message:function(_,{ version, downloadSpeed, config_ffmpeg, config_save_dir, config_proxy })
+        {
+            version && (this.version = version);
+            downloadSpeed && (this.downloadSpeed = downloadSpeed);
+            config_ffmpeg && (this.config_ffmpeg = config_ffmpeg);
+            config_save_dir && (this.config_save_dir = config_save_dir);
+            config_proxy && (that.config_proxy = data.config_proxy);
         },
         clickAClick: function(e){
             e.preventDefault();
@@ -357,5 +368,3 @@ const _app = new Vue({
         this.installEvent();
     }
 });
-
-console.log(_app);

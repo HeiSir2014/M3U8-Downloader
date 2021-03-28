@@ -56,7 +56,7 @@
       "!node_modules/ffmpeg-static/ffmpeg.exe",
       "!node_modules/ffmpeg-static/ffmpeg",
       "!node_modules/ffmpeg-static/ffmpeg.ffmpeg",
-      "!resource/aria2/*"
+      "!static/aria2/*"
     ],
     "asar": true,
     "win": {
@@ -74,10 +74,10 @@
       ],
       "extraResources": [
         "node_modules/ffmpeg-static/ffmpeg.exe",
-        "resource/aria2/win32/aria2.conf",
-        "resource/aria2/win32/aria2c.exe"
+        "static/aria2/win32/aria2.conf",
+        "static/aria2/win32/aria2c.exe"
       ],
-      "icon": "resource/icon/logo-512.png"
+      "icon": "static/icon/logo-512.png"
     },
     "dmg": {
       "window": {
@@ -107,19 +107,19 @@
       ],
       "extraResources": [
         "node_modules/ffmpeg-static/ffmpeg",
-        "resource/aria2/darwin/aria2.conf",
-        "resource/aria2/darwin/aria2c"
+        "static/aria2/darwin/aria2.conf",
+        "static/aria2/darwin/aria2c"
       ],
-      "icon": "resource/icon/logo.icns"
+      "icon": "static/icon/logo.icns"
     },
     "nsis": {
       "perMachine": true,
       "oneClick": false,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "resource/icon/logo.ico",
-      "uninstallerIcon": "resource/icon/logo.ico",
-      "installerHeaderIcon": "resource/icon/logo.ico",
+      "installerIcon": "static/icon/logo.ico",
+      "uninstallerIcon": "static/icon/logo.ico",
+      "installerHeaderIcon": "static/icon/logo.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "M3U8-Downloader"
@@ -130,8 +130,8 @@
     "linux": {
       "extraResources": [
         "node_modules/ffmpeg-static/ffmpeg",
-        "resource/aria2/linux/aria2.conf",
-        "resource/aria2/linux/aria2c"
+        "static/aria2/linux/aria2.conf",
+        "static/aria2/linux/aria2c"
       ],
       "target": [
         "AppImage",

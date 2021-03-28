@@ -7,7 +7,7 @@ const winston = require('winston');
 const fs = require('fs');
 
 const globalConfigDir = app.getPath('userData');
-const aria2Dir = path.join(app.getAppPath(), "resource", "aria2", process.platform);
+const aria2Dir = path.join(app.getAppPath(), "static", "aria2", process.platform);
 const aria2_app = path.join(aria2Dir, "aria2c.exe");
 const aria2_config = path.join(aria2Dir, "aria2.conf");
 const sessionPath = path.join(app.getPath('userData'), 'download.session');

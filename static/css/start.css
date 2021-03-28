@@ -42,15 +42,16 @@ html,body,#app,#app section,#app section .main{
 .el-header {
     -webkit-app-region: drag;
     padding:0 !important;
-    background-color:#009afb;
+    background:linear-gradient(45deg,#CAE8FF,#A2C9FD);
     line-height: 40px;
+    height: 40px;
 }
 
 .el-header .title{
     margin-left: 10px;
     font-weight: 600;
     font-size: 16px;
-    color: #f3f3f3;
+    color: #474847;
     margin-top: -6px;
 }
 
@@ -147,7 +148,7 @@ html,body,#app,#app section,#app section .main{
 }
 
 .main .el-tabs .el-tabs__content{
-    height: calc(100% - 40px);
+    height: calc(100% - 20px);
 }
 
 .main .mybutton{
@@ -166,26 +167,42 @@ html,body,#app,#app section,#app section .main{
 
 .el-tabs--border-card{
     border-width: 0px !important;
-    background-color:#00000000 !important;
+    height: 100%;
+    background-color: #E6F4FF !important;
 }
-.el-tabs--border-card>.el-tabs__header{
-    background-color: #009afb;
-    padding: 0 10px;
+.el-tabs--border-card>.el-tabs__header.is-left{
+    background-color: #E6F4FF;
+    padding: 20px;
+    border-right:0 !important;
 }
 
-.el-tabs--border-card>.el-tabs__header .el-tabs__item{
-    color: white !important;
+.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item{
+    color: #787a7b !important;
     border-width: 0;
-    font-size: 16px;
+    padding: 20px 15px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 20px;
+    height: fit-content;
     -webkit-app-region: no-drag;
 }
 
-.el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active{
-    color:#009afb !important;
-    
-    background-color:#f3f3f3 !important;
+.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item:hover{
+    background-color: #cde9ff !important;
 }
 
+.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item.is-active{
+    color: #2F80ED !important;
+    background-color: #F4FAFF !important;
+}
+
+.el-tabs--border-card>.el-tabs__content
+{
+    background-color: #EFF7FF;
+    margin: 10px;
+    border-radius: 15px;
+    border: solid 1px white;
+}
 .heisir .main .TaskList{
     height: calc(100% - 70px);
     margin: 0px auto;

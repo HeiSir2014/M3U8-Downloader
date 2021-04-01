@@ -67,12 +67,19 @@ QQ交流群：341972319 [QQ交流群](https://jq.qq.com/?_wv=1027&k=nhFrZBS0)
 
 # 下载可执行包
 
-## [推荐] 蓝奏下载
+## 前往百度网盘下载
+
+```
+链接：https://pan.baidu.com/s/14zaMkxgfTC0HSge-Ze6EpQ 
+提取码：m3u8 
+复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V1的分享
+```
+
+## 蓝奏下载(100M大小限制，版本不全)
 ## [Windows 、Linux、MacOS 下载](https://tools.heisir.cn/HLSDownload/download.html)
 
 ## Github 下载
 ## [Releases下载](https://github.com/HeiSir2014/M3U8-Downloader/releases)
-
 
 # 运行源码
 ### NodeJS开发环境搭建

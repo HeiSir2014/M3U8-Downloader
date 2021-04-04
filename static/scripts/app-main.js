@@ -32,7 +32,9 @@ const _app = new Vue({
             downloadSpeed:'0 MB/s',
             playlists:[],
             playlistUri:'',
-            addTaskMessage:''
+            addTaskMessage:'',
+            navigatorUrl:'about:blank',
+            currentUserAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36"
         }
     },
     methods:{
@@ -131,6 +133,22 @@ const _app = new Vue({
             ipcRenderer.send('get-version');
             ipcRenderer.send('get-all-videos');
             ipcRenderer.send('get-config-dir');
+
+
+            let browser = document.querySelector('#browser');
+            browser.addEventListener('new-window',(e) => {
+                const protocol = (new URL(e.url)).protocol
+                if (protocol === 'http:' || protocol === 'https:') {
+                    browser.loadURL(e.url)
+                }
+            });
+            browser.addEventListener('will-navigate',(e) => {
+                that.navigatorUrl = e.url;
+            });
+            browser.addEventListener('did-navigate',(e) => {
+                that.navigatorUrl = e.url;
+            });
+
         },
         message:function(_,{ version, downloadSpeed, config_ffmpeg, config_save_dir, config_proxy })
         {
@@ -295,7 +313,7 @@ const _app = new Vue({
             this.tsMergeStatus = '';
         },
         clickOpenMergeTSDir:function(e){
-            ipcRenderer.send('opendir',this.tsMergeMp4Dir);
+            ipcRenderer.send('opendir',this.tsMergeMp4Dir,this.tsMergeMp4Path);
         },
         clickPlayMergeMp4:function(e){
             ipcRenderer.send('playvideo',this.tsMergeMp4Path);

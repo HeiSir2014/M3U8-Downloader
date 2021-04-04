@@ -39,7 +39,7 @@ html,body,#app,#app section,#app section .main{
     padding: 12px 10px;
 }
 
-.el-header {
+.el-header.header {
     -webkit-app-region: drag;
     padding:0 !important;
     background:linear-gradient(45deg,#CAE8FF,#A2C9FD);
@@ -47,7 +47,7 @@ html,body,#app,#app section,#app section .main{
     height: 40px;
 }
 
-.el-header .title{
+.el-header.header .title{
     margin-left: 10px;
     font-weight: 600;
     font-size: 16px;
@@ -139,7 +139,7 @@ html,body,#app,#app section,#app section .main{
     color: #67C23A;
 }
 
-.main .el-tabs__header{
+.main .el-tabs__header.is-left{
     -webkit-app-region: drag;
 }
 
@@ -165,18 +165,18 @@ html,body,#app,#app section,#app section .main{
 }
 */
 
-.el-tabs--border-card{
+.el-tabs--border-card.el-tabs--left{
     border-width: 0px !important;
     height: 100%;
     background-color: #E6F4FF !important;
 }
-.el-tabs--border-card>.el-tabs__header.is-left{
+.el-tabs--border-card.el-tabs--left>.el-tabs__header.is-left{
     background-color: #E6F4FF;
-    padding: 20px;
+    padding: 20px 0;
     border-right:0 !important;
 }
 
-.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item{
+.el-tabs--border-card.el-tabs--left>.el-tabs__header.is-left .el-tabs__item{
     color: #787a7b !important;
     border-width: 0;
     padding: 20px 15px;
@@ -184,19 +184,22 @@ html,body,#app,#app section,#app section .main{
     font-weight: 500;
     font-size: 20px;
     height: fit-content;
+    border-left-width: 4px;
+    border-left-color:transparent;
     -webkit-app-region: no-drag;
 }
 
-.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item:hover{
+.el-tabs--border-card.el-tabs--left>.el-tabs__header.is-left .el-tabs__item:hover{
     background-color: #cde9ff !important;
 }
 
-.el-tabs--border-card>.el-tabs__header.is-left .el-tabs__item.is-active{
+.el-tabs--border-card.el-tabs--left>.el-tabs__header.is-left .el-tabs__item.is-active{
     color: #2F80ED !important;
     background-color: #F4FAFF !important;
+    border-left-color:currentColor;
 }
 
-.el-tabs--border-card>.el-tabs__content
+.el-tabs--border-card.el-tabs--left>.el-tabs__content
 {
     background-color: #EFF7FF;
     margin: 10px;
@@ -349,6 +352,11 @@ html,body,#app,#app section,#app section .main{
     display: block;
     padding: 10px;
     background-color: #fff;
+}
+
+.heisir .main .navigatorTop{
+    padding: 0;
+    height: 40px !important;
 }
 
 .alipay{

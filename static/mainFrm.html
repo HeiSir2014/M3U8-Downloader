@@ -13,7 +13,7 @@
     <div id="app">
         <template>
             <el-container>
-                <el-header height='40px'>
+                <el-header class="header" height='40px'>
                     <el-row>
                         <el-col :span="14">
                             <div class="title">{{'M3U8-Downloader v' + version}}</div>
@@ -274,13 +274,13 @@
                             </el-tabs>
                         </el-tab-pane>
                         <el-tab-pane>
-                            <span slot="label"><i class="el-icon-download"></i> 资源嗅探</span>
+                            <span slot="label"><i class="el-icon-view"></i> 资源嗅探</span>
                             <el-container>
-                                <el-header height="40px">
-                                    <el-input placeholder="请输入 url"></el-input>
+                                <el-header class="navigatorTop">
+                                    <el-input v-model="navigatorUrl" placeholder="请输入 url"></el-input>
                                 </el-header>
-                                <el-main>
-                                    <webview></webview>
+                                <el-main style="padding: 0;">
+                                    <webview id="browser" style="height: 100%;" :src="navigatorUrl" nodeintegration disablewebsecurity :useragent="currentUserAgent"></webview>
                                 </el-main>
                             </el-container>
                         </el-tab-pane>
@@ -364,7 +364,7 @@
                             <section id="comments" class="vcomment"></section>
                         </el-tab-pane>
                         <el-tab-pane label="我的信息">
-                            <span slot="label"><i class="el-icon-chat-dot-square"></i> 我的信息</span>
+                            <span slot="label"><i class="el-icon-s-custom"></i> 我</span>
                         </el-tab-pane>
                     </el-tabs>
                 </el-main>

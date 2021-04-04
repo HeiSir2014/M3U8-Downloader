@@ -7,7 +7,8 @@ const {
     shell,
     Menu,
     dialog,
-    screen
+    screen,
+    session
 } = require('electron');
 const isDev = require('electron-is-dev');
 const {
@@ -130,7 +131,7 @@ process.on('unhandledRejection', (reason, promise) => {
     logger.error(`unhandledRejection: ${promise} | ${reason}`)
 });
 
-logger.info(`\n\n----- ${appInfo.name} | v${appInfo.version} | ${os.platform()} -----\n\n`)
+console.log(`\n\n----- ${appInfo.name} | v${appInfo.version} | ${os.platform()} -----\n\n`)
 
 function createWindow() {
     // 创建浏览器窗口
@@ -147,6 +148,7 @@ function createWindow() {
             nodeIntegration: true,
             spellcheck: false,
             contextIsolation: false,
+            webviewTag:true
         },
         icon: path.join(__dirname, 'static', 'icon', 'logo.png'),
         alwaysOnTop: false,
@@ -231,6 +233,28 @@ async function checkUpdate() {
         logger.error(error);
     }
 }
+
+function webRequestReq(details, callback){
+    if(!details.webContentsId || details.webContentsId  == mainWindow.webContents.id) {
+        callback({cancel:false});return
+    }
+    const id = details.webContentsId;
+    /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) &&
+     console.log("req\t" + details.url);
+    
+    callback({cancel:false});
+};
+
+function webRequestRsp(details){
+    if(!details.webContentsId || details.webContentsId  == mainWindow.webContents.id) {
+        return
+    }
+    const id = details.webContentsId;
+    /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) && 
+    console.log("rsp\t" + details.url);
+}
+
+
 app.on('ready', () => {
 
     // 单例应用程序
@@ -291,27 +315,24 @@ app.on('ready', () => {
     pathDownloadDir = nconf.get('SaveVideoDir');
 
     const config_proxy = nconf.get('config_proxy');
+    let httpProxy = new HttpProxyAgent({
+        keepAlive: true,
+        keepAliveMsecs: 1000,
+        maxSockets: 256,
+        maxFreeSockets: 256,
+        scheduling: 'lifo',
+        proxy: config_proxy
+    });
     proxy_agent = config_proxy ? {
-        http: new HttpProxyAgent({
-            keepAlive: true,
-            keepAliveMsecs: 1000,
-            maxSockets: 256,
-            maxFreeSockets: 256,
-            scheduling: 'lifo',
-            proxy: config_proxy
-        }),
-        https: new HttpsProxyAgent({
-            keepAlive: true,
-            keepAliveMsecs: 1000,
-            maxSockets: 256,
-            maxFreeSockets: 256,
-            scheduling: 'lifo',
-            proxy: config_proxy
-        })
-    } : null;
+        http: httpProxy,
+        https: httpProxy
+    }:null;
+
+    session.defaultSession.webRequest.onBeforeRequest(webRequestReq);
+    session.defaultSession.webRequest.onResponseStarted(webRequestRsp);
 
     //百度统计代码
-    (async () => {
+    false && (async () => {
         try {
             checkUpdate();
             _updateInterval = setInterval(checkUpdate, 600000);
@@ -335,7 +356,6 @@ app.on('ready', () => {
             } catch (error_) {
                 logger.error(error_)
             }
-            logger.info(HMACCOUNT);
             await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime()/1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=${encodeURIComponent(referer)}`, {
                 headers: {
                     "Referer": referer,
@@ -1303,8 +1323,9 @@ function showDirInExploer(dir) {
     });
 }
 
-ipcMain.on('opendir', function (event, arg) {
-    showDirInExploer(arg)
+ipcMain.on('opendir', function (event, arg,path) {
+    fs.existsSync(arg) && showDirInExploer(arg);
+    !fs.existsSync(arg) && fs.existsSync(path) && showDirInExploer(path);
 });
 
 ipcMain.on('playvideo', function (event, arg) {

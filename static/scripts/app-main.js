@@ -33,8 +33,11 @@ const _app = new Vue({
             playlists:[],
             playlistUri:'',
             addTaskMessage:'',
-            navigatorUrl:'about:blank',
-            currentUserAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36"
+            navigatorInput:'',
+            //navigatorUrl:'about:blank',
+            navigatorUrl:'https://haokan.baidu.com/?sfrom=baidu-top',
+            currentUserAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
+            browserVideoUrls:[]
         }
     },
     methods:{
@@ -43,23 +46,6 @@ const _app = new Vue({
 
             ipcRenderer.on('message',this.message.bind(this));
 
-            ipcRenderer.on('get-version-reply',function(event,data){
-                that.version = data;
-            });
-        
-            ipcRenderer.on('notify-download-speed',function(event,data){
-                that.downSpeed = data;
-            });
-
-            ipcRenderer.on('get-all-videos-reply',function(event,data){
-                that.allVideos = data;
-            });
-            
-            ipcRenderer.on('get-config-dir-reply',function(event,data){
-                that.config_save_dir = data.config_save_dir;
-                that.config_ffmpeg = data.config_ffmpeg;
-                data.config_proxy && (that.config_proxy = data.config_proxy);
-            });
             ipcRenderer.on('open-select-m3u8-reply',function(event,data){
                 that.m3u8_url = data;
             });
@@ -130,11 +116,6 @@ const _app = new Vue({
                 }
             });
 
-            ipcRenderer.send('get-version');
-            ipcRenderer.send('get-all-videos');
-            ipcRenderer.send('get-config-dir');
-
-
             let browser = document.querySelector('#browser');
             browser.addEventListener('new-window',(e) => {
                 const protocol = (new URL(e.url)).protocol
@@ -142,21 +123,28 @@ const _app = new Vue({
                     browser.loadURL(e.url)
                 }
             });
-            browser.addEventListener('will-navigate',(e) => {
-                that.navigatorUrl = e.url;
-            });
-            browser.addEventListener('did-navigate',(e) => {
-                that.navigatorUrl = e.url;
-            });
-
+            let navigateEvent = (e) => {
+                that.navigatorInput = e.url;
+                that.browserVideoUrls = [];
+            }
+            browser.addEventListener('will-navigate',navigateEvent);
+            browser.addEventListener('did-navigate',navigateEvent);
         },
-        message:function(_,{ version, downloadSpeed, config_ffmpeg, config_save_dir, config_proxy })
+        message:function(_,{ version, downloadSpeed, 
+            config_ffmpeg, config_save_dir, config_proxy,videoDatas,browserVideoUrl })
         {
             version && (this.version = version);
             downloadSpeed && (this.downloadSpeed = downloadSpeed);
             config_ffmpeg && (this.config_ffmpeg = config_ffmpeg);
             config_save_dir && (this.config_save_dir = config_save_dir);
-            config_proxy && (that.config_proxy = data.config_proxy);
+            config_proxy && (this.config_proxy = data.config_proxy);
+            videoDatas && (this.allVideos = videoDatas);
+            browserVideoUrl && (this.browserVideoUrls.push(browserVideoUrl))
+        },
+        clickNaviagte: function(e){
+            if(!this.navigatorInput) return;
+            !/^http[s]\:\/\//.test(this.navigatorInput) && (this.navigatorInput = 'http://' + this.navigatorInput);
+            this.navigatorUrl != this.navigatorInput && (this.navigatorUrl = this.navigatorInput);
         },
         clickAClick: function(e){
             e.preventDefault();

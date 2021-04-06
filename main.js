@@ -158,6 +158,15 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'static', 'mainFrm.html'));
     isDev && mainWindow.openDevTools();
     mainWindow.on('closed', () => mainWindow = null);
+    mainWindow.webContents.on('dom-ready',(e)=>{
+        e.sender.send('message', {
+            version:package_self.version,
+            config_save_dir: pathDownloadDir,
+            config_ffmpeg: ffmpegPath,
+            config_proxy: nconf.get('config_proxy'),
+            videoDatas
+        });
+    })
     mainWindow.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
         return {action: 'deny'};
@@ -240,7 +249,7 @@ function webRequestReq(details, callback){
     }
     const id = details.webContentsId;
     /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) &&
-     console.log("req\t" + details.url);
+     (console.log("req\t" + details.url), mainWindow && mainWindow.webContents.send('message',{browserVideoUrl:details.url}));
     
     callback({cancel:false});
 };
@@ -432,7 +441,7 @@ app.on('ready', () => {
                     var _speed = '';
                     var speed = parseInt(result['downloadSpeed']);
                     _speed = (speed < 1024 * 1024) ? Math.round(speed / 1024) + ' KB/s' : (speed / 1024 / 1024).toFixed(2) + ' MiB/s'
-                    mainWindow.webContents.send('notify-download-speed', _speed);
+                    mainWindow.webContents.send('message', {downloadSpeed:_speed});
                 }
             });
         }, 1500);
@@ -484,15 +493,6 @@ ipcMain.on("hide-windows", function () {
         title: "提示",
         content: "我隐藏到这里了哦，双击我显示主窗口！"
     }), firstHide = false));
-});
-
-ipcMain.on('get-version', function (event, arg) {
-    event.sender.send('get-version-reply', package_self.version);
-});
-
-ipcMain.on('get-all-videos', function (event, arg) {
-
-    event.sender.send('get-all-videos-reply', videoDatas);
 });
 
 ipcMain.on('open-log-dir', function (event, arg) {
@@ -1357,13 +1357,6 @@ ipcMain.on('setting_isdelts', function (event, arg) {
     isdelts = arg;
 });
 
-ipcMain.on('get-config-dir', function (event, arg) {
-    event.sender.send("get-config-dir-reply", {
-        config_save_dir: pathDownloadDir,
-        config_ffmpeg: ffmpegPath,
-        config_proxy: nconf.get('config_proxy')
-    });
-})
 ipcMain.on('set-config', function (event, data) {
     nconf.set(data.key, data.value);
     nconf.save();
@@ -1404,7 +1397,7 @@ ipcMain.on('open-config-dir', function (event, arg) {
             pathDownloadDir = result.filePaths[0];
             nconf.set('SaveVideoDir', pathDownloadDir);
             nconf.save();
-            event.sender.send("get-config-dir-reply", {
+            event.sender.send("message", {
                 config_save_dir: pathDownloadDir,
                 config_ffmpeg: ffmpegPath
             });

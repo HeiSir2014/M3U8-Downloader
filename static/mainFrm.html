@@ -276,12 +276,23 @@
                         <el-tab-pane>
                             <span slot="label"><i class="el-icon-view"></i> 资源嗅探</span>
                             <el-container>
-                                <el-header class="navigatorTop">
-                                    <el-input v-model="navigatorUrl" placeholder="请输入 url"></el-input>
-                                </el-header>
-                                <el-main style="padding: 0;">
-                                    <webview id="browser" style="height: 100%;" :src="navigatorUrl" nodeintegration disablewebsecurity :useragent="currentUserAgent"></webview>
-                                </el-main>
+                                <el-container>
+                                    <el-header class="navigatorTop">
+                                        <el-input type="text" v-model="navigatorInput" placeholder="请输入 url" clearable @change="clickNaviagte"></el-input>
+                                    </el-header>
+                                    <el-main style="padding: 0;">
+                                        <webview id="browser" style="height: 100%;" :src="navigatorUrl" nodeintegration
+                                            disablewebsecurity :useragent="currentUserAgent"></webview>
+                                    </el-main>
+                                </el-container>
+                                <el-aside width="300px">
+                                    <ul>
+                                        <li v-for="item in browserVideoUrls">
+                                            <el-input type="text" :value="item"></el-input>
+                                            <el-button>下载</el-button>
+                                        </li>
+                                    </ul>
+                                </el-aside>
                             </el-container>
                         </el-tab-pane>
                         <el-tab-pane label="软件设置">
@@ -291,8 +302,7 @@
                                     <span style="line-height: 40px;float: right;">视频存储</span>
                                 </el-col>
                                 <el-col :span="18">
-                                    <el-input placeholder="请单击右侧按钮选择存储文件夹" v-model="config_save_dir"
-                                        :readonly="true">
+                                    <el-input placeholder="请单击右侧按钮选择存储文件夹" v-model="config_save_dir" :readonly="true">
                                     </el-input>
                                 </el-col>
                                 <el-col :span="2">
@@ -314,8 +324,8 @@
                                 </el-col>
 
                                 <el-col :span="9">
-                                    <el-input placeholder="请输入HTTP代理(如：http://127.0.0.1:7890 )"
-                                        v-model="config_proxy" @change="proxyChange"></el-input>
+                                    <el-input placeholder="请输入HTTP代理(如：http://127.0.0.1:7890 )" v-model="config_proxy"
+                                        @change="proxyChange"></el-input>
                                 </el-col>
                             </el-row>
                             <br>
@@ -340,8 +350,8 @@
                             </el-row>
                             <el-row :gutter="8">
                                 <el-col :span="12" :offset="6">
-                                    <el-alert title="开发不易，如果您觉得此款软件对您有帮助，可以请小哥哥喝杯咖啡吗?" type="error"
-                                        :center="true" :closable="false">
+                                    <el-alert title="开发不易，如果您觉得此款软件对您有帮助，可以请小哥哥喝杯咖啡吗?" type="error" :center="true"
+                                        :closable="false">
                                     </el-alert>
                                 </el-col>
                             </el-row>
@@ -350,8 +360,7 @@
                             <span slot="label"><i class="el-icon-chat-dot-square"></i> 交流反馈</span>
                             <el-row :gutter="8">
                                 <el-col :span="22">
-                                    <el-alert
-                                        title="警示：【天网恢恢疏而不漏】遵纪守法是每位公民应尽的义务，严禁在此发布违规违法内容，否则后果自负！违规内容举报QQ：1586462"
+                                    <el-alert title="警示：【天网恢恢疏而不漏】遵纪守法是每位公民应尽的义务，严禁在此发布违规违法内容，否则后果自负！违规内容举报QQ：1586462"
                                         type="warning" :center="true" :closable="false" show-icon>
                                     </el-alert>
                                 </el-col>

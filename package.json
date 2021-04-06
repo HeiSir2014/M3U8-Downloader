@@ -12,7 +12,7 @@
     "download": "^8.0.0",
     "electron-context-menu": "^2.4.0",
     "electron-is-dev": "^1.2.0",
-    "ffmpeg-static": "^4.2.8",
+    "ffmpeg-static": "^4.3.0",
     "fluent-ffmpeg": "^2.1.2",
     "forever-monitor": "^3.0.1",
     "got": "^11.5.0",

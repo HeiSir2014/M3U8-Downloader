@@ -281,15 +281,29 @@
                                         <el-input type="text" v-model="navigatorInput" placeholder="请输入 url" clearable @change="clickNaviagte"></el-input>
                                     </el-header>
                                     <el-main style="padding: 0;">
-                                        <webview id="browser" style="height: 100%;" :src="navigatorUrl" nodeintegration
-                                            disablewebsecurity :useragent="currentUserAgent"></webview>
+                                        <webview id="browser" style="height: 100%;" :src="navigatorUrl"
+                                         :useragent="currentUserAgent"></webview>
                                     </el-main>
                                 </el-container>
-                                <el-aside width="300px">
+                                <el-aside class="videoPanel" v-if="browserVideoUrls && browserVideoUrls.length" width="300px">
                                     <ul>
-                                        <li v-for="item in browserVideoUrls">
-                                            <el-input type="text" :value="item"></el-input>
-                                            <el-button>下载</el-button>
+                                        <li class="videoItem" v-for="item in browserVideoUrls">
+                                            <el-row :gutter="10">
+                                                <el-col :span="6"><el-label>{{item.type}}</el-label></el-col>
+                                                <el-col :span="18"><el-input type="text" readonly :value="item.url"></el-input></el-col>
+                                            </el-row>
+                                            <el-row :gutter="10">
+                                                <el-col :span="6"><el-label>HEADER</el-label></el-col>
+                                                <el-col :span="18"><el-input type="text" readonly :value="item.headers"></el-input></el-col>
+                                            </el-row>
+                                            <el-row v-if="item.key" :gutter="10">
+                                                <el-col :span="6"><el-label>KEY</el-label></el-col>
+                                                <el-col :span="18"><el-input type="text" readonly :value="item.key"></el-input></el-col>
+                                            </el-row>
+                                            <el-row :gutter="10">
+                                                <el-col :offset="8" :span="8"><el-button>浏览</el-button></el-col>
+                                                <el-col :span="8"><el-button>下载</el-button></el-col>
+                                            </el-row>
                                         </li>
                                     </ul>
                                 </el-aside>

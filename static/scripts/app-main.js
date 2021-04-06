@@ -129,9 +129,12 @@ const _app = new Vue({
             }
             browser.addEventListener('will-navigate',navigateEvent);
             browser.addEventListener('did-navigate',navigateEvent);
+            browser.addEventListener('dom-ready',()=>{
+                browser.openDevTools();
+            });
         },
         message:function(_,{ version, downloadSpeed, 
-            config_ffmpeg, config_save_dir, config_proxy,videoDatas,browserVideoUrl })
+            config_ffmpeg, config_save_dir, config_proxy,videoDatas,browserVideoItem })
         {
             version && (this.version = version);
             downloadSpeed && (this.downloadSpeed = downloadSpeed);
@@ -139,7 +142,7 @@ const _app = new Vue({
             config_save_dir && (this.config_save_dir = config_save_dir);
             config_proxy && (this.config_proxy = data.config_proxy);
             videoDatas && (this.allVideos = videoDatas);
-            browserVideoUrl && (this.browserVideoUrls.push(browserVideoUrl))
+            browserVideoItem && (this.browserVideoUrls.push(browserVideoItem))
         },
         clickNaviagte: function(e){
             if(!this.navigatorInput) return;

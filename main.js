@@ -248,8 +248,18 @@ function webRequestReq(details, callback){
         callback({cancel:false});return
     }
     const id = details.webContentsId;
-    /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) &&
-     (console.log("req\t" + details.url), mainWindow && mainWindow.webContents.send('message',{browserVideoUrl:details.url}));
+    if(/http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url))
+    {
+        let [_null,_type] = details.url.match( /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/ );
+        
+        console.log(details);
+        let _item = {
+            type: _type.toUpperCase(),
+            url: details.url,
+            headers: JSON.stringify(details.requestHeaders)
+        }
+        mainWindow && mainWindow.webContents.send('message',{browserVideoItem:_item})
+    }
     
     callback({cancel:false});
 };
@@ -337,7 +347,8 @@ app.on('ready', () => {
         https: httpProxy
     }:null;
 
-    session.defaultSession.webRequest.onBeforeRequest(webRequestReq);
+    //session.defaultSession.webRequest.onBeforeRequest(webRequestReq);
+    session.defaultSession.webRequest.onBeforeSendHeaders(webRequestReq);
     session.defaultSession.webRequest.onResponseStarted(webRequestRsp);
 
     //百度统计代码

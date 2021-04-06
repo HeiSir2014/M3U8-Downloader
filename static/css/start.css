@@ -379,3 +379,23 @@ html,body,#app,#app section,#app section .main{
     padding-right: 10px !important;
     height: calc(100% - 60px) !important;
 }
+
+.heisir .main .videoPanel {
+    padding-left: 10px;
+}
+
+.heisir .main .videoItem > .el-row{
+    margin-bottom: 10px;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+.heisir .main .videoItem > .el-row el-label{
+    line-height: 40px;
+    float: right;
+}
+.heisir .main .videoItem .el-button{
+    width: 100%;
+}

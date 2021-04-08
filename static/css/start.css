@@ -381,7 +381,8 @@ html,body,#app,#app section,#app section .main{
 }
 
 .heisir .main .videoPanel {
-    padding-left: 10px;
+    margin-left: 10px;
+    background-color: floralwhite;
 }
 
 .heisir .main .videoItem > .el-row{

@@ -566,7 +566,15 @@ ipcMain.on('task-add', async function (event, object) {
 
                     if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length == 1) {
                         let uri = parser.manifest.playlists[0].uri;
-                        hlsSrc = uri[0] == '/' ? (hlsSrc.substr(0, hlsSrc.indexOf('/', 10)) + uri) : uri;
+                        if(!uri.startsWith('http'))
+                        {
+                            hlsSrc = uri[0] == '/' ? (hlsSrc.substr(0, hlsSrc.indexOf('/', 10)) + uri) :
+                             (hlsSrc.replace(/\/[^\/]*((\?.*)|$)/,'/') + uri);
+                        }
+                        else
+                        {
+                            hlsSrc = uri;
+                        }
                         object.url = hlsSrc;
                         parser = new Parser();
                         continue;
@@ -918,7 +926,15 @@ async function startDownload(object, iidx) {
                     parser.end();
                     if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length >= 1) {
                         let uri = parser.manifest.playlists[0].uri;
-                        url = uri[0] == '/' ? (url.substr(0, url.indexOf('/', 10)) + uri) : uri;
+                        if(!uri.startsWith('http'))
+                        {
+                            url = uri[0] == '/' ? (url.substr(0, url.indexOf('/', 10)) + uri) :
+                             (url.replace(/\/[^\/]*((\?.*)|$)/,'/') + uri);
+                        }
+                        else
+                        {
+                            url = uri;
+                        }
                         parser = new Parser();
                         continue;
                     }

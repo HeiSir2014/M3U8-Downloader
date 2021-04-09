@@ -179,7 +179,14 @@ const _app = new Vue({
                 if(this.playlistUri != '')
                 {
                     const uri = this.playlistUri;
-                    m3u8_url = uri[0]=='/'?(m3u8_url.substr(0,m3u8_url.indexOf('/',10))+uri):uri;
+                    if(!uri.startsWith('http'))
+                    {
+                        m3u8_url = uri[0] == '/' ? (m3u8_url.substr(0, m3u8_url.indexOf('/', 10)) + uri) :
+                            (m3u8_url.replace(/\/[^\/]*((\?.*)|$)/,'/') + uri);
+                    }
+                    else{
+                        m3u8_url = uri;
+                    }
                 }
 
                 ipcRenderer.send('task-add', { url: m3u8_url,

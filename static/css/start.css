@@ -181,8 +181,8 @@ html,body,#app,#app section,#app section .main{
     border-width: 0;
     padding: 20px 15px;
     text-align: left;
-    font-weight: 500;
-    font-size: 20px;
+    font-weight: normal;
+    font-size: 18px !important;
     height: fit-content;
     border-left-width: 4px;
     border-left-color:transparent;

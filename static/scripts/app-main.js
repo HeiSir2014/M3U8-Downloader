@@ -37,7 +37,8 @@ const _app = new Vue({
             //navigatorUrl:'about:blank',
             navigatorUrl:'https://haokan.baidu.com/?sfrom=baidu-top',
             currentUserAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
-            browserVideoUrls:[]
+            browserVideoUrls:[],
+            platform:''
         }
     },
     methods:{
@@ -134,15 +135,16 @@ const _app = new Vue({
             });
         },
         message:function(_,{ version, downloadSpeed, 
-            config_ffmpeg, config_save_dir, config_proxy,videoDatas,browserVideoItem })
+            config_ffmpeg, config_save_dir, config_proxy,videoDatas,browserVideoItem,platform})
         {
             version && (this.version = version);
             downloadSpeed && (this.downloadSpeed = downloadSpeed);
             config_ffmpeg && (this.config_ffmpeg = config_ffmpeg);
             config_save_dir && (this.config_save_dir = config_save_dir);
-            config_proxy && (this.config_proxy = data.config_proxy);
+            config_proxy && (this.config_proxy = config_proxy);
             videoDatas && (this.allVideos = videoDatas);
             browserVideoItem && (this.browserVideoUrls.push(browserVideoItem))
+            platform && (this.platform = platform);
         },
         clickNaviagte: function(e){
             if(!this.navigatorInput) return;

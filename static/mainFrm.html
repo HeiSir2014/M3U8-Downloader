@@ -13,7 +13,7 @@
     <div id="app">
         <template>
             <el-container>
-                <el-header class="header" height='40px'>
+                <el-header v-if="platform != 'darwin'" class="header" height='40px'>
                     <el-row>
                         <el-col :span="14">
                             <div class="title">{{'M3U8-Downloader v' + version}}</div>

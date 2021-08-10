@@ -8,7 +8,8 @@ const {
     Menu,
     dialog,
     screen,
-    session
+    session,
+    nativeImage
 } = require('electron');
 const isDev = require('electron-is-dev');
 const {
@@ -138,50 +139,54 @@ function createWindow() {
     let _workAreaSize = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workAreaSize;
     mainWindow = new BrowserWindow({
         width: _workAreaSize.width * 0.6,
-        height: _workAreaSize.height * 0.6,
+        height: _workAreaSize.height * 0.7,
         minWidth: 954,
         minHeight: 600,
         center: true,
-        frame: false,
+        frame: (process.platform == 'darwin'),
         resizable: true,
         webPreferences: {
             nodeIntegration: true,
             spellcheck: false,
             contextIsolation: false,
-            webviewTag:true
+            webviewTag: true
         },
         icon: path.join(__dirname, 'static', 'icon', 'logo.png'),
         alwaysOnTop: false,
         hasShadow: false,
+        title:`${AppTitle} ${package_self.version}`
     });
     mainWindow.setMenu(null);
     mainWindow.loadFile(path.join(__dirname, 'static', 'mainFrm.html'));
     isDev && mainWindow.openDevTools();
     mainWindow.on('closed', () => mainWindow = null);
-    mainWindow.webContents.on('dom-ready',(e)=>{
+    mainWindow.webContents.on('dom-ready', (e) => {
         e.sender.send('message', {
-            version:package_self.version,
+            version: package_self.version,
             config_save_dir: pathDownloadDir,
             config_ffmpeg: ffmpegPath,
             config_proxy: nconf.get('config_proxy'),
-            videoDatas
+            videoDatas,
+            platform: process.platform
         });
+        e.sender.setTitle(`${AppTitle} ${package_self.version}`)
     })
     mainWindow.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
-        return {action: 'deny'};
+        return { action: 'deny' };
     });
 }
 
 function createPlayerWindow(src) {
     if (playerWindow == null) {
         // 创建浏览器窗口
+        let _workAreaSize = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workAreaSize;
         playerWindow = new BrowserWindow({
-            width: 1024,
-            height: 600,
+            width: _workAreaSize.width * 0.6,
+            height: _workAreaSize.height * 0.7,
             skipTaskbar: false,
             transparent: false,
-            frame: false,
+            frame: (process.platform == 'darwin'),
             resizable: true,
             webPreferences: {
                 nodeIntegration: true,
@@ -196,14 +201,15 @@ function createPlayerWindow(src) {
         playerWindow.on('closed', () => playerWindow = null);
         playerWindow.loadFile(path.join(__dirname, 'static', 'player.html'));
         playerWindow.webContents.on('dom-ready', (e) => {
-            e.sender.send('play', {
-                file: src
+            e.sender.send('message', {
+                platform: process.platform,playsrc:src
             });
         });
+        isDev && playerWindow.openDevTools();
         return;
     }
-    playerWindow.webContents.send('play', {
-        file: src
+    playerWindow.webContents.send('message', {
+        playsrc: src
     });
 }
 
@@ -231,10 +237,10 @@ async function checkUpdate() {
         _updateInterval && (clearInterval(_updateInterval), _updateInterval = null);
 
         if (dialog.showMessageBoxSync(mainWindow, {
-                type: 'question',
-                buttons: ["Yes", "No"],
-                message: `检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`
-            }) == 0) {
+            type: 'question',
+            buttons: ["Yes", "No"],
+            message: `检测到新版本(${_package.version})，是否要打开升级页面，下载最新版`
+        }) == 0) {
             shell.openExternal("https://tools.heisir.cn/HLSDownload/download.html");
             return;
         }
@@ -243,34 +249,33 @@ async function checkUpdate() {
     }
 }
 
-function webRequestReq(details, callback){
-    if(!details.webContentsId || details.webContentsId  == mainWindow.webContents.id) {
-        callback({cancel:false});return
+function webRequestReq(details, callback) {
+    if (!details.webContentsId || details.webContentsId == mainWindow.webContents.id) {
+        callback({ cancel: false }); return
     }
     const id = details.webContentsId;
-    if(/http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url))
-    {
-        let [_null,_type] = details.url.match( /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/ );
-        
+    if (/http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url)) {
+        let [_null, _type] = details.url.match(/http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/);
+
         console.log(details);
         let _item = {
             type: _type.toUpperCase(),
             url: details.url,
             headers: JSON.stringify(details.requestHeaders)
         }
-        mainWindow && mainWindow.webContents.send('message',{browserVideoItem:_item})
+        mainWindow && mainWindow.webContents.send('message', { browserVideoItem: _item })
     }
-    
-    callback({cancel:false});
+
+    callback({ cancel: false });
 };
 
-function webRequestRsp(details){
-    if(!details.webContentsId || details.webContentsId  == mainWindow.webContents.id) {
+function webRequestRsp(details) {
+    if (!details.webContentsId || details.webContentsId == mainWindow.webContents.id) {
         return
     }
     const id = details.webContentsId;
-    /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) && 
-    console.log("rsp\t" + details.url);
+    /http.*\.((mp4)|(m3u8)|(flv)|(mp3)|(mpd)|(wav))(\?|$)/.test(details.url) &&
+        console.log("rsp\t" + details.url);
 }
 
 
@@ -296,33 +301,33 @@ app.on('ready', () => {
         }
     });
     createWindow();
-    tray = new Tray(path.join(__dirname, 'static', 'icon', 'logo.png'))
-    tray.setTitle(AppTitle);
+    let iconImg = nativeImage.createFromPath(path.join(__dirname, 'static', 'icon', 'logo.png'));
+    tray = new Tray(iconImg.resize({ width: 20, height: 20 }));
     tray.setToolTip(AppTitle);
     tray.on("double-click", () => {
         mainWindow && mainWindow.show();
     });
 
     const contextMenu = Menu.buildFromTemplate([{
-            label: '显示窗口',
-            type: 'normal',
-            click: () => {
-                mainWindow.show();
-            }
-        },
-        {
-            type: 'separator'
-        },
-        {
-            label: '退出',
-            type: 'normal',
-            click: () => {
-                aria2Server && aria2Server.stop();
-                playerWindow && playerWindow.close();
-                mainWindow && mainWindow.close();
-                setTimeout(app.quit.bind(app), 1000);
-            }
+        label: '显示窗口',
+        type: 'normal',
+        click: () => {
+            mainWindow.show();
         }
+    },
+    {
+        type: 'separator'
+    },
+    {
+        label: '退出',
+        type: 'normal',
+        click: () => {
+            aria2Server && aria2Server.stop();
+            playerWindow && playerWindow.close();
+            mainWindow && mainWindow.close();
+            setTimeout(app.quit.bind(app), 1000);
+        }
+    }
     ]);
     tray.setContextMenu(contextMenu);
     try {
@@ -345,7 +350,7 @@ app.on('ready', () => {
     proxy_agent = config_proxy ? {
         http: httpProxy,
         https: httpProxy
-    }:null;
+    } : null;
 
     //session.defaultSession.webRequest.onBeforeRequest(webRequestReq);
     session.defaultSession.webRequest.onBeforeSendHeaders(webRequestReq);
@@ -376,7 +381,7 @@ app.on('ready', () => {
             } catch (error_) {
                 logger.error(error_)
             }
-            await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime()/1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=${encodeURIComponent(referer)}`, {
+            await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime() / 1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=${encodeURIComponent(referer)}`, {
                 headers: {
                     "Referer": referer,
                     "Cookie": "HMACCOUNT=" + HMACCOUNT
@@ -452,7 +457,7 @@ app.on('ready', () => {
                     var _speed = '';
                     var speed = parseInt(result['downloadSpeed']);
                     _speed = (speed < 1024 * 1024) ? Math.round(speed / 1024) + ' KB/s' : (speed / 1024 / 1024).toFixed(2) + ' MiB/s'
-                    mainWindow.webContents.send('message', {downloadSpeed:_speed});
+                    mainWindow.webContents.send('message', { downloadSpeed: _speed });
                 }
             });
         }, 1500);
@@ -566,13 +571,11 @@ ipcMain.on('task-add', async function (event, object) {
 
                     if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length == 1) {
                         let uri = parser.manifest.playlists[0].uri;
-                        if(!uri.startsWith('http'))
-                        {
+                        if (!uri.startsWith('http')) {
                             hlsSrc = uri[0] == '/' ? (hlsSrc.substr(0, hlsSrc.indexOf('/', 10)) + uri) :
-                             (hlsSrc.replace(/\/[^\/]*((\?.*)|$)/,'/') + uri);
+                                (hlsSrc.replace(/\/[^\/]*((\?.*)|$)/, '/') + uri);
                         }
-                        else
-                        {
+                        else {
                             hlsSrc = uri;
                         }
                         object.url = hlsSrc;
@@ -741,7 +744,7 @@ class QueueObject {
                 uri_ts = this.url_prefix + (this.url_prefix.endsWith('/') || segment.uri.startWith('/') ? '' : "/") + segment.uri;
             }
 
-            let filename = `${ ((this.idx + 1) +'').padStart(6,'0')}.ts`;
+            let filename = `${((this.idx + 1) + '').padStart(6, '0')}.ts`;
             let filpath = path.join(this.dir, filename);
             let filpath_dl = path.join(this.dir, filename + ".dl");
 
@@ -907,11 +910,11 @@ async function startDownload(object, iidx) {
 
     logger.info(dir);
 
-    !fs.existsSync(dir) && fs.mkdirSync(dir, {recursive: true});
+    !fs.existsSync(dir) && fs.mkdirSync(dir, { recursive: true });
 
     let parser = new Parser();
     if (/^file:\/\/\//g.test(url)) {
-        parser.push(fs.readFileSync(url.replace(/^file:\/\/\//, ''),{encoding:'utf-8'}));
+        parser.push(fs.readFileSync(url.replace(/^file:\/\/\//, ''), { encoding: 'utf-8' }));
         parser.end();
     } else {
         for (let index = 0; index < 3; index++) {
@@ -921,18 +924,16 @@ async function startDownload(object, iidx) {
                 agent: proxy_agent
             }).catch(logger.error); {
                 if (response && response.body != null &&
-                    response.body != ''){
+                    response.body != '') {
                     parser.push(response.body);
                     parser.end();
                     if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length >= 1) {
                         let uri = parser.manifest.playlists[0].uri;
-                        if(!uri.startsWith('http'))
-                        {
+                        if (!uri.startsWith('http')) {
                             url = uri[0] == '/' ? (url.substr(0, url.indexOf('/', 10)) + uri) :
-                             (url.replace(/\/[^\/]*((\?.*)|$)/,'/') + uri);
+                                (url.replace(/\/[^\/]*((\?.*)|$)/, '/') + uri);
                         }
-                        else
-                        {
+                        else {
                             url = uri;
                         }
                         parser = new Parser();
@@ -1020,7 +1021,7 @@ async function startDownload(object, iidx) {
         mainWindow.webContents.send('task-notify-end', video);
         let fileSegments = [];
         for (let iSeg = 0; iSeg < segments.length; iSeg++) {
-            let filpath = path.join(dir, `${ ((iSeg + 1) +'').padStart(6,'0') }.ts`);
+            let filpath = path.join(dir, `${((iSeg + 1) + '').padStart(6, '0')}.ts`);
             if (fs.existsSync(filpath)) {
                 fileSegments.push(filpath);
             }
@@ -1096,7 +1097,7 @@ class FFmpegStreamReadable extends Readable {
     constructor(opt) {
         super(opt);
     }
-    _read() {}
+    _read() { }
 }
 
 async function startDownloadLive(object) {
@@ -1193,7 +1194,7 @@ async function startDownloadLive(object) {
                         uri_ts = partent_uri + segment.uri;
                     }
 
-                    let filename = `${ ((count_downloaded + 1) +'').padStart(6,'0') }.ts`;
+                    let filename = `${((count_downloaded + 1) + '').padStart(6, '0')}.ts`;
                     let filpath = path.join(dir, filename);
                     let filpath_dl = path.join(dir, filename + ".dl");
 
@@ -1350,13 +1351,13 @@ function showDirInExploer(dir) {
     });
 }
 
-ipcMain.on('opendir', function (event, arg,path) {
+ipcMain.on('opendir', function (event, arg, path) {
     fs.existsSync(arg) && showDirInExploer(arg);
     !fs.existsSync(arg) && fs.existsSync(path) && showDirInExploer(path);
 });
 
 ipcMain.on('playvideo', function (event, arg) {
-    createPlayerWindow(arg);
+    fs.existsSync(arg) && createPlayerWindow(arg);
 });
 ipcMain.on('StartOrStop', function (event, arg) {
     logger.info(arg);

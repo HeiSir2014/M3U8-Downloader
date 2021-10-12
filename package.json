@@ -26,7 +26,7 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
-    "electron": "^13.1.9",
+    "electron": "^12.1.0",
     "electron-builder": "^22.9.1"
   },
   "scripts": {

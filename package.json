@@ -1,7 +1,7 @@
 {
   "name": "m3u8-downloader",
   "productName": "M3U8-Downloader",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "M3U8-Downloader，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -26,7 +26,7 @@
     "winston": "^3.3.2"
   },
   "devDependencies": {
-    "electron": "^11.1.1",
+    "electron": "^16.0.7",
     "electron-builder": "^22.7.0"
   },
   "scripts": {
@@ -42,8 +42,8 @@
   "build": {
     "appId": "cn.heisir.m3u8-downloader",
     "artifactName": "${productName}-${os}_${arch}-${version}.${ext}",
-    "electronVersion": "11.1.1",
-    "copyright": "Copyright © 2021 ${author}",
+    "electronVersion": "16.0.7",
+    "copyright": "Copyright © 2022 ${author}",
     "compression": "normal",
     "directories": {
       "output": "dist"

@@ -1,5 +1,5 @@
 const os = require('os')
-const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog } = require('electron');
+const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog,nativeImage } = require('electron');
 const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const path = require('path');

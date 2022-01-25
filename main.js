@@ -141,6 +141,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       spellcheck: false,
+      contextIsolation: false,
       webSecurity: !isDev
     },
     icon: path.join(__dirname, 'resource/icon/logo.png'),

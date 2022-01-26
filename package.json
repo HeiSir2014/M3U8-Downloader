@@ -104,7 +104,13 @@
       "appId": "cn.heisir.m3u8-downloader-mac",
       "category": "public.app-category.productivity",
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "extraResources": [
         "node_modules/ffmpeg-static/ffmpeg",

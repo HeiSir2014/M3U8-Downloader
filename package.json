@@ -15,7 +15,7 @@
     "ffmpeg-static": "^4.4.0",
     "fluent-ffmpeg": "^2.1.2",
     "forever-monitor": "^1.5.2",
-    "got": "^11.8.2",
+    "got": "^11.8.5",
     "hpagent": "^0.1.2",
     "http": "0.0.0",
     "https": "^1.0.0",

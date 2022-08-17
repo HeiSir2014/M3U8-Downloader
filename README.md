@@ -56,7 +56,7 @@ flowchart LR
 # 官网
 [M3U8-Downloader 官网](https://tools.heisir.cn/HLSDownload)
 
-QQ交流群：341972319 [QQ交流群](https://jq.qq.com/?_wv=1027&k=nhFrZBS0)
+QQ交流群：294560267
 
 # 获取M3U8视频地址
 

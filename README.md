@@ -53,11 +53,6 @@ flowchart LR
 
 ---
 
-# 官网
-[M3U8-Downloader 官网](https://tools.heisir.cn/HLSDownload)
-
-QQ交流群：294560267
-
 # 获取M3U8视频地址
 
 在chrome浏览器打开视频网页，按下F12,页签点击到Network页面，在Filter框里输入"m3u8",然后按F5刷新页面，如果网页里的视频使用的是HLS源，就可以在这里捕获到视频流地址，然后选中右键 Copy -> Copy Link Address.
@@ -74,9 +69,6 @@ QQ交流群：294560267
 提取码：m3u8 
 复制这段内容后打开百度网盘手机App，操作更方便哦--来自百度网盘超级会员V1的分享
 ```
-
-## 蓝奏下载(100M大小限制，版本不全)
-## [Windows 、Linux、MacOS 下载](https://tools.heisir.cn/HLSDownload/download.html)
 
 ## Github 下载
 ## [Releases下载](https://github.com/HeiSir2014/M3U8-Downloader/releases)

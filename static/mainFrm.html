@@ -67,14 +67,14 @@
                                     <ul class="list TaskList" style="overflow:auto">
                                         <li v-for="o in allVideos" :key="o.id" class="item">
                                             <div class="m3u8"></div>
-                                            <div class="link"><input type="text" :value="o.url" readonly></div>
+                                            <div class="link"><input type="text" :value="o.url" :title="o.url" readonly></div>
 
-                                            <div class="name"><span>名称：</span><span class="value">{{o.taskName}}</span>
+                                            <div class="name"><span>名称：</span><span class="value" :title="o.taskName">{{o.taskName}}</span>
                                             </div>
-                                            <div class="time"><span>时间：</span><span class="value">{{o.time}}</span>
+                                            <div class="time"><span>时间：</span><span class="value" :title="o.time">{{o.time}}</span>
                                             </div>
                                             <div class="status">
-                                                <span>状态：</span><span class="value">{{o.status}}</span>
+                                                <span>状态：</span><span class="value" :title="o.status">{{o.status}}</span>
                                             </div>
                                             <div class="opt">
                                                 <div class="top">

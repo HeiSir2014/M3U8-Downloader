@@ -1061,6 +1061,8 @@ async function startDownload(object, iidx) {
                         let index_path = path.join(dir, 'index.txt');
                         fs.existsSync(index_path) && fs.unlinkSync(index_path);
                         fileSegments.forEach(item => fs.existsSync(item) && fs.unlinkSync(item));
+                        let aesKey_path = path.join(dir, 'aes.key');
+                        fs.existsSync(aesKey_path) && fs.unlinkSync(aesKey_path);
                         fs.rmdirSync(dir);
                     }
                     fs.writeFileSync(pathVideoDB, JSON.stringify(videoDatas));

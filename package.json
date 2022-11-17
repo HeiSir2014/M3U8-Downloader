@@ -27,7 +27,7 @@
     "filenamify": "^3.0.0"
   },
   "devDependencies": {
-    "electron": "^15.5.5",
+    "electron": "^18.3.7",
     "electron-builder": "^22.9.1"
   },
   "scripts": {

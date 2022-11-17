@@ -37,6 +37,7 @@ const ffmpegPath = require('ffmpeg-static').replace(/app.asar[\/\\]{1,2}/g, '');
 const contextMenu = require('electron-context-menu');
 const Aria2 = require('aria2');
 const forever = require('forever-monitor');
+const filenamify = require('filenamify');
 const {
     HttpProxyAgent,
     HttpsProxyAgent
@@ -906,7 +907,7 @@ async function startDownload(object, iidx) {
         taskName = `${id}`;
     }
 
-    let dir = path.join(pathDownloadDir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g, ""));
+    let dir = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}));
 
     logger.info(dir);
 
@@ -1033,7 +1034,7 @@ async function startDownload(object, iidx) {
             return;
         }
         let outPathMP4 = path.join(dir, Date.now() + ".mp4");
-        let outPathMP4_ = path.join(pathDownloadDir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g, "") + '.mp4');
+        let outPathMP4_ = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}) + '.mp4');
         if (fs.existsSync(ffmpegPath)) {
             let ffmpegInputStream = new FFmpegStreamReadable(null);
             new ffmpeg(ffmpegInputStream)
@@ -1110,7 +1111,7 @@ async function startDownloadLive(object) {
     if (!taskName) {
         taskName = `${id}`;
     }
-    let dir = dir = path.join(pathDownloadDir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g, ""));
+    let dir = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}));
 
     logger.info(dir);
 

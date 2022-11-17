@@ -23,7 +23,8 @@
     "nconf": "^0.11.4",
     "queue": "^6.0.2",
     "url": "^0.11.0",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "filenamify": "^3.0.0"
   },
   "devDependencies": {
     "electron": "^15.5.5",

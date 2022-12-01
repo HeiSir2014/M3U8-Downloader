@@ -21,7 +21,6 @@ const {
 } = require('m3u8-parser');
 const fs = require('fs');
 const async = require('async');
-const dateFormat = require('dateformat');
 const download = require('download');
 const crypto = require('crypto');
 const got = require('got');
@@ -50,6 +49,10 @@ contextMenu({
     showServices: false,
     showSearchWithGoogle: false
 });
+
+const dateFormat = (dt) => {
+    return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().replace(/T|(\.\d+Z)/g, ' ').trim()
+}
 
 let isdelts = true;
 let mainWindow = null;
@@ -155,7 +158,7 @@ function createWindow() {
         icon: path.join(__dirname, 'static', 'icon', 'logo.png'),
         alwaysOnTop: false,
         hasShadow: false,
-        title:`${AppTitle} ${package_self.version}`
+        title: `${AppTitle} ${package_self.version}`
     });
     mainWindow.setMenu(null);
     mainWindow.loadFile(path.join(__dirname, 'static', 'mainFrm.html'));
@@ -203,7 +206,7 @@ function createPlayerWindow(src) {
         playerWindow.loadFile(path.join(__dirname, 'static', 'player.html'));
         playerWindow.webContents.on('dom-ready', (e) => {
             e.sender.send('message', {
-                platform: process.platform,playsrc:src
+                platform: process.platform, playsrc: src
             });
         });
         isDev && playerWindow.openDevTools();
@@ -907,7 +910,7 @@ async function startDownload(object, iidx) {
         taskName = `${id}`;
     }
 
-    let dir = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}));
+    let dir = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }));
 
     logger.info(dir);
 
@@ -1034,7 +1037,7 @@ async function startDownload(object, iidx) {
             return;
         }
         let outPathMP4 = path.join(dir, Date.now() + ".mp4");
-        let outPathMP4_ = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}) + '.mp4');
+        let outPathMP4_ = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }) + '.mp4');
         if (fs.existsSync(ffmpegPath)) {
             let ffmpegInputStream = new FFmpegStreamReadable(null);
             new ffmpeg(ffmpegInputStream)
@@ -1113,7 +1116,7 @@ async function startDownloadLive(object) {
     if (!taskName) {
         taskName = `${id}`;
     }
-    let dir = path.join(pathDownloadDir, filenamify(taskName, {replacement: '_'}));
+    let dir = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }));
 
     logger.info(dir);
 

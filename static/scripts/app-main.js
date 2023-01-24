@@ -162,10 +162,13 @@ const _app = new Vue({
         clickClose:function(e){
             ipcRenderer.send('hide-windows');
         },
+        clickGotoSettingTab:function(e){
+            this.tabPane = "setting";
+        },
         clickNewTask:function(e){
             if(!this.config_save_dir)
             {
-                this.tabPane = "setting";
+                this.clickGotoSettingTab();
                 this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
                 return;
             }
@@ -213,7 +216,7 @@ const _app = new Vue({
         clickNewTaskMuti:function(e){
             if(!this.config_save_dir)
             {
-                this.tabPane = "setting";
+                this.clickGotoSettingTab();
                 this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
                 return;
             }
@@ -293,7 +296,7 @@ const _app = new Vue({
             this.tsMergeStatus = '';
             if(!this.config_save_dir)
             {
-                this.tabPane = "setting";
+                this.clickGotoSettingTab();
                 this.$message({title: '提示',type: 'error',message: "请先设置存储路径，再开始下载视频",offset:100,duration:1000});
                 return;
             }

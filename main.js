@@ -910,7 +910,7 @@ async function startDownload(object, iidx) {
         taskName = `${id}`;
     }
 
-    let dir = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }));
+    let dir = path.join(pathDownloadDir, filenamify(taskName.trim(), { replacement: '_' }));
 
     logger.info(dir);
 
@@ -1037,7 +1037,7 @@ async function startDownload(object, iidx) {
             return;
         }
         let outPathMP4 = path.join(dir, Date.now() + ".mp4");
-        let outPathMP4_ = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }) + '.mp4');
+        let outPathMP4_ = path.join(pathDownloadDir, filenamify(taskName.trim(), { replacement: '_' }) + '.mp4');
         if (fs.existsSync(ffmpegPath)) {
             let ffmpegInputStream = new FFmpegStreamReadable(null);
             new ffmpeg(ffmpegInputStream)
@@ -1116,7 +1116,7 @@ async function startDownloadLive(object) {
     if (!taskName) {
         taskName = `${id}`;
     }
-    let dir = path.join(pathDownloadDir, filenamify(taskName, { replacement: '_' }));
+    let dir = path.join(pathDownloadDir, filenamify(taskName.trim(), { replacement: '_' }));
 
     logger.info(dir);
 

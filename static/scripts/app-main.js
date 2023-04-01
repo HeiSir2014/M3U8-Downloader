@@ -151,6 +151,23 @@ const _app = new Vue({
             !/^http[s]\:\/\//.test(this.navigatorInput) && (this.navigatorInput = 'http://' + this.navigatorInput);
             this.navigatorUrl != this.navigatorInput && (this.navigatorUrl = this.navigatorInput);
         },
+        navigateBy: function(val) {
+            let browser = document.querySelector('#browser')
+            switch (val) {
+                case -1:
+                    if(browser.canGoBack())browser.goBack();
+                    break;
+                case 0:
+                    browser.reload();
+                    break;
+                case 1:
+                    if(browser.canGoForward())browser.goForward();
+                    break;
+                default:
+                    break;
+            }
+
+        },
         clickAClick: function(e){
             e.preventDefault();
             console.log(e.target.href);

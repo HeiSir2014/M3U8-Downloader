@@ -278,6 +278,9 @@
                             <el-container>
                                 <el-container>
                                     <el-header class="navigatorTop">
+                                        <i class="el-icon-arrow-left tooltip-icon" @click="navigateBy(-1)" title="go back"></i>
+                                        <i class="el-icon-arrow-right tooltip-icon" @click="navigateBy(1)" title="go forward"></i>
+                                        <i class="el-icon-refresh-right tooltip-icon" @click="navigateBy(0)" title="reload this page"></i>
                                         <el-input type="text" v-model="navigatorInput" placeholder="请输入 url" clearable @change="clickNaviagte"></el-input>
                                     </el-header>
                                     <el-main style="padding: 0;">

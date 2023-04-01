@@ -357,6 +357,13 @@ html,body,#app,#app section,#app section .main{
 .heisir .main .navigatorTop{
     padding: 0;
     height: 40px !important;
+    display: flex;
+    align-items: center;
+}
+
+.tooltip-icon {
+    padding: 10px;
+    font-weight: bold;
 }
 
 .alipay{

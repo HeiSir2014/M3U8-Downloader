@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
 const { shell } = require('electron');
+const isDev = require('electron-is-dev');
 
 const _app = new Vue({
     el: '#app',
@@ -131,7 +132,7 @@ const _app = new Vue({
             browser.addEventListener('will-navigate',navigateEvent);
             browser.addEventListener('did-navigate',navigateEvent);
             browser.addEventListener('dom-ready',()=>{
-                browser.openDevTools();
+                isDev && browser.openDevTools();
             });
         },
         message:function(_,{ version, downloadSpeed, 

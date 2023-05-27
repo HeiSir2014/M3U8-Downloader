@@ -98,7 +98,7 @@ npm install yarn -g
 yarn
 ```
 
-如果安装超时，可以尝试使用镜像:
+ffmpeg-static 安装超时，可以尝试使用镜像:
 
 ```
 FFMPEG_BINARIES_URL=https://cdn.npmmirror.com/binaries/ffmpeg-static yarn

@@ -50,6 +50,13 @@ contextMenu({
     showSearchWithGoogle: false
 });
 
+const formatFilename = (url) => {
+    var m3u8_filename_matcher = /([^/]+.m3u8)[\?|$]/.exec(url);
+    if (m3u8_filename_matcher && m3u8_filename_matcher[1]) {
+        return m3u8_filename_matcher[1];
+    }
+}
+
 const dateFormat = (dt) => {
     return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().replace(/T|(\.\d+Z)/g, ' ').trim()
 }
@@ -907,7 +914,7 @@ async function startDownload(object, iidx) {
     let url = object.url;
     let taskIsDelTs = object.taskIsDelTs;
     if (!taskName) {
-        taskName = `${id}`;
+        taskName = formatFilename(url) || `${id}`;
     }
 
     let dir = path.join(pathDownloadDir, filenamify(taskName.trim(), { replacement: '_' }));
@@ -1114,7 +1121,7 @@ async function startDownloadLive(object) {
     let myKeyIV = object.myKeyIV;
     let url = object.url;
     if (!taskName) {
-        taskName = `${id}`;
+        taskName = formatFilename(url) || `${id}`;
     }
     let dir = path.join(pathDownloadDir, filenamify(taskName.trim(), { replacement: '_' }));
 

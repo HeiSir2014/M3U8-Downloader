@@ -97,11 +97,19 @@ npm install yarn -g
 ```
 yarn
 ```
+
+如果安装超时，可以尝试使用镜像:
+
+```
+FFMPEG_BINARIES_URL=https://cdn.npmmirror.com/binaries/ffmpeg-static yarn
+```
+
 ### 运行M3U8-Downloader
 
 ```
 yarn start
 ```
+
 ### 打包发布
 
 ```

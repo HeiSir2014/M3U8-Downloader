@@ -21,7 +21,7 @@ ipcRenderer.on('message',(_,{platform,playsrc})=>{
             variable: 'player', //播放函数名称
             //loop: true, //播放结束是否循环播放
             autoplay: true,//是否自动播放,
-            video:videosrc
+            video:playsrc
         };
         new ckplayer(videoObject);
     }

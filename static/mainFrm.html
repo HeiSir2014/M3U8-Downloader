@@ -41,15 +41,15 @@
                                 </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
-                        <el-button class="button" icon="el-icon-setting" v-on:click="tabPane = 'setting'"></el-button>
+                        <el-button class="button" icon="el-icon-setting" v-on:click="clickGotoSettingTab"></el-button>
                         <el-button class="button" icon="el-icon-close" v-on:click="clickClose"></el-button>
                     </div>
                 </el-header>
                 <el-main class="main">
-                    <el-tabs tab-position="left" type="border-card" style="height: 100%;">
+                    <el-tabs tab-position="left" type="border-card" style="height: 100%;" v-model="tabPane">
                         <el-tab-pane>
                             <span slot="label"><i class="el-icon-download"></i> 资源下载</span>
-                            <el-tabs type="border-card" v-model="tabPane">
+                            <el-tabs type="border-card">
                                 <el-tab-pane label="M3U8视频下载">
                                     <el-row :gutter="8">
                                         <el-col :span="3" :offset="1">
@@ -312,7 +312,7 @@
                                 </el-aside>
                             </el-container>
                         </el-tab-pane>
-                        <el-tab-pane label="软件设置">
+                        <el-tab-pane label="软件设置" name="setting">
                             <span slot="label"><i class="el-icon-s-tools"></i> 软件设置</span>
                             <el-row :gutter="8">
                                 <el-col :span="2" :offset="1">

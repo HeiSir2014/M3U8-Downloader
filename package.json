@@ -1,7 +1,7 @@
 {
   "name": "m3u8-downloader",
   "productName": "M3U8-Downloader",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "M3U8-Downloader，用于下载主流网站的视频和直播。",
   "main": "main.js",
   "dependencies": {
@@ -19,11 +19,11 @@
     "hpagent": "^0.1.1",
     "http": "0.0.0",
     "https": "^1.0.0",
-    "m3u8-parser": "^4.4.0",
+    "m3u8-parser": "^7.2.0",
     "nconf": "^0.10.0",
     "queue": "^6.0.1",
     "url": "^0.11.0",
-    "winston": "^3.3.2"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "electron": "^16.0.7",

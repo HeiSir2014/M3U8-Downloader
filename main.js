@@ -1,5 +1,5 @@
 const os = require('os')
-const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog,nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog, nativeImage } = require('electron');
 const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -22,6 +22,7 @@ const contextMenu = require('electron-context-menu');
 const Aria2 = require('aria2');
 const forever = require('forever-monitor');
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
+const url = require('url');
 
 contextMenu({ showCopyImage: false, showCopyImageAddress: false, showInspectElement: false, showServices: false });
 
@@ -211,7 +212,11 @@ function version2float(v) {
 async function checkUpdate() {
   //const { body } =await got("https://raw.githubusercontent.com/HeiSir2014/M3U8-Downloader/master/package.json").catch(logger.error);
 
-  const { body } = await got("https://tools.heisir.cn/HLSDownload/package.json").catch(logger.error);
+  const { body } = await got("https://tools.heisir.cn/HLSDownload/package.json", {
+    https: {
+      rejectUnauthorized: false
+    }
+  }).catch(logger.error);
   if (body != '') {
     try {
       let _package = JSON.parse(body);
@@ -303,7 +308,11 @@ app.on('ready', () => {
 
       let HMACCOUNT = nconf.get('HMACCOUNT');
       if (!HMACCOUNT) HMACCOUNT = '';
-      const { headers } = await got("http://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3", { headers: { "Referer": referer, "Cookie": "HMACCOUNT=" + HMACCOUNT } });
+      const { headers } = await got("http://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3", {
+        headers: { "Referer": referer, "Cookie": "HMACCOUNT=" + HMACCOUNT }, https: {
+          rejectUnauthorized: false
+        }
+      });
       try {
         HMACCOUNT = headers['set-cookie'] && headers['set-cookie'][0].match(/HMACCOUNT=(.*?);/i)[1];
         if (HMACCOUNT) {
@@ -458,7 +467,7 @@ ipcMain.on('task-clear', async function (event, object) {
 });
 
 ipcMain.on('task-add', async function (event, object) {
-  logger.info(object);
+  logger.info(JSON.stringify(object));
   let hlsSrc = object.url;
   let _headers = {};
   if (object.headers) {
@@ -494,18 +503,25 @@ ipcMain.on('task-add', async function (event, object) {
   }
   else {
     for (let index = 0; index < 3; index++) {
-      let response = await got(hlsSrc, { headers: _headers, timeout: httpTimeout, agent: proxy_agent }).catch(logger.error);
+      logger.info(`got ${hlsSrc} index:${index}`);
+      let response = await got(hlsSrc, {
+        headers: _headers, timeout: httpTimeout, agent: proxy_agent, https: {
+          rejectUnauthorized: false
+        }
+      }).catch(logger.error);
       {
         if (response && response.body != null
           && response.body != '') {
           parser.push(response.body);
           parser.end();
 
-          if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length == 1) {
-            let uri = parser.manifest.playlists[0].uri;
-            hlsSrc = uri[0] == '/' ? (hlsSrc.substr(0, hlsSrc.indexOf('/', 10)) + uri) : uri;
+          if (!parser.manifest.segments || !parser.manifest.segments.length
+            && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length >= 1) {
+            hlsSrc = url.resolve(hlsSrc, parser.manifest.playlists[0].uri);
+            logger.info(`redirect ${parser.manifest.playlists[0].uri} to ${hlsSrc} index:${index}`);
             object.url = hlsSrc;
             parser = new Parser();
+            index = 0;
             continue;
           }
           break;
@@ -621,7 +637,7 @@ class QueueObject {
   async callback(_callback) {
     try {
       this.retry = this.retry + 1;
-      if (this.retry > 5) {
+      if (this.retry > 10) {
         this.catch && this.catch();
         return;
       }
@@ -826,7 +842,7 @@ async function startDownload(object, iidx) {
   let url_prefix = object.url_prefix;
   let taskName = object.taskName;
   let myKeyIV = object.myKeyIV;
-  let url = object.url;
+  let url_src = object.url;
   let taskIsDelTs = object.taskIsDelTs;
   if (!taskName) {
     taskName = `${id}`;
@@ -843,22 +859,28 @@ async function startDownload(object, iidx) {
   }
 
   let parser = new Parser();
-  if (/^file:\/\/\//g.test(url)) {
-    parser.push(fs.readFileSync(url.replace(/^file:\/\/\//, '')));
+  if (/^file:\/\/\//g.test(url_src)) {
+    parser.push(fs.readFileSync(url_src.replace(/^file:\/\/\//, '')));
     parser.end();
   }
   else {
     for (let index = 0; index < 3; index++) {
-      let response = await got(url, { headers: headers, timeout: httpTimeout, agent: proxy_agent }).catch(logger.error);
+      let response = await got(url_src, {
+        headers: headers, timeout: httpTimeout, agent: proxy_agent, https: {
+          rejectUnauthorized: false
+        }
+      }).catch(logger.error);
       {
         if (response && response.body != null
           && response.body != '') {
           parser.push(response.body);
           parser.end();
 
-          if (parser.manifest.segments.length == 0 && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length >= 1) {
-            let uri = parser.manifest.playlists[0].uri;
-            url = uri[0] == '/' ? (url.substr(0, url.indexOf('/', 10)) + uri) : uri;
+          if (!parser.manifest.segments || !parser.manifest.segments.length
+            && parser.manifest.playlists && parser.manifest.playlists.length && parser.manifest.playlists.length >= 1) {
+            url_src = url.resolve(url_src, parser.manifest.playlists[0].uri);
+            logger.info(`redirect ${parser.manifest.playlists[0].uri} to ${url_src} index:${index}`);
+            index = 0;
             parser = new Parser();
             continue;
           }
@@ -870,13 +892,13 @@ async function startDownload(object, iidx) {
 
 
   //并发 2 个线程下载
-  var tsQueues = async.queue(queue_callback, 5);
+  var tsQueues = async.queue(queue_callback, 10);
 
   let count_seg = parser.manifest.segments.length;
   let count_downloaded = 0;
   var video = {
     id: id,
-    url: url,
+    url: url_src,
     url_prefix: url_prefix,
     dir: dir,
     segment_total: count_seg,
@@ -905,7 +927,7 @@ async function startDownload(object, iidx) {
     qo.dir = dir;
     qo.idx = iSeg;
     qo.id = id;
-    qo.url = url;
+    qo.url = url_src;
     qo.url_prefix = url_prefix;
     qo.headers = headers;
     qo.myKeyIV = myKeyIV;
@@ -919,7 +941,7 @@ async function startDownload(object, iidx) {
       }
     };
     qo.catch = function () {
-      if (this.retry < 5) {
+      if (this.retry < 10) {
         tsQueues.push(this);
       }
       else {
@@ -953,7 +975,7 @@ async function startDownload(object, iidx) {
     if (!fileSegments.length) {
       video.status = "下载失败，请检查链接有效性";
       mainWindow.webContents.send('task-notify-end', video);
-      logger.error(`[${url}] 下载失败，请检查链接有效性`);
+      logger.error(`[${url_src}] 下载失败，请检查链接有效性`);
       return;
     }
     let outPathMP4 = path.join(dir, taskName.replace(/["“”，\.。\|\/\\ \*:;\?<>]/g, "") + '.mp4');
@@ -1076,7 +1098,11 @@ async function startDownloadLive(object) {
   while (globalCond[id]) {
 
     try {
-      const response = await got(url, { headers: headers, timeout: httpTimeout, agent: proxy_agent }).catch(logger.error);
+      const response = await got(url, {
+        headers: headers, timeout: httpTimeout, agent: proxy_agent, https: {
+          rejectUnauthorized: false
+        }
+      }).catch(logger.error);
       if (response == null || response.body == null || response.body == '') {
         break;
       }

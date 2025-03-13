@@ -18,7 +18,7 @@ jobs:
         node-version: [ 22.13.0 ]
 
     steps:
-    - uses: actions/checkout@v2.4.3
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
       with:
@@ -31,7 +31,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2.2.4
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: |

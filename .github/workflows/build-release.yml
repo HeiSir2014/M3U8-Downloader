@@ -30,6 +30,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
+    - name: Install Python (for node-gyp)
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -37,6 +42,7 @@ jobs:
         path: |
           dist/M3U8-Downloader-*
           !dist/M3U8-Downloader-*.blockmap
+          ${{ env.DIST_PATH }}
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}

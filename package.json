@@ -146,6 +146,16 @@
       ],
       "maintainer": "heisir <heisir21@163.com>",
       "category": "Utility"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseFiles": [
+        "*.exe",
+        "*.dmg",
+        "*.zip",
+        "*.AppImage",
+        "*.deb"
+      ]
     }
   },
   "author": {

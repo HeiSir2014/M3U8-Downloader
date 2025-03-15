@@ -129,7 +129,8 @@
       "installerHeaderIcon": "resource/icon/logo.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "M3U8-Downloader"
+      "shortcutName": "M3U8-Downloader",
+      "differentialPackage": false
     },
     "appImage": {
       "category": "public.app-category.productivity"
@@ -146,16 +147,6 @@
       ],
       "maintainer": "heisir <heisir21@163.com>",
       "category": "Utility"
-    },
-    "publish": {
-      "provider": "github",
-      "releaseFiles": [
-        "*.exe",
-        "*.dmg",
-        "*.zip",
-        "*.AppImage",
-        "*.deb"
-      ]
     }
   },
   "author": {

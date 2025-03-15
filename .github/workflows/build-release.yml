@@ -21,9 +21,16 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install Python (for node-gyp)
+      if: matrix.os == 'macos-latest'
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
+
+    - if: matrix.os == 'macos-latest'
+      run: |
+          python3 -m pip install --upgrade pip
+          pip install --upgrade setuptools
+          pip install wheel
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2

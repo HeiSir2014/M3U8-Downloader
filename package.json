@@ -7,7 +7,7 @@
   "dependencies": {
     "aria2": "^4.1.0",
     "async": "^3.2.0",
-    "crypto-js": "^4.0.0",
+    "crypto-js": "^4.2.0",
     "dateformat": "^3.0.3",
     "download": "^8.0.0",
     "electron-context-menu": "^2.4.0",

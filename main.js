@@ -836,7 +836,7 @@ async function startDownload(object, iidx) {
 
   logger.info(dir);
 
-  GA4.sendEvent('download', { time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), url: url_src });
+  GA4.sendEvent('download', { time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss") });
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

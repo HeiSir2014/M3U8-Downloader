@@ -1,17 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>播放器</title>
-    <link rel="stylesheet" href="resource/css/style.css">
-    <script type="text/javascript" src="resource/js/ckplayer2/ckplayer.js"></script>
-</head><body class="heisir">
-    <div class="header player"><span class="title">播放器</span><button class="close"></button></div>
-    <div class="main player">
-        <div class="video" id="player" ></div>
-    </div>
-    <script src="player.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>播放器</title>
+  <link rel="stylesheet" href="resource/css/style.css">
+  <script type="text/javascript" src="resource/js/ckplayer2/ckplayer.js"></script>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-23VH4CNT3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-23VH4CNT3L');
+</script>
+<script>
+  var _hmt = _hmt || [];
+  (function () {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+<body class="heisir">
+  <div class="header player"><span class="title">播放器</span><button class="close"></button></div>
+  <div class="main player">
+    <div class="video" id="player"></div>
+  </div>
+  <script src="player.js"></script>
 </body>
 </html>

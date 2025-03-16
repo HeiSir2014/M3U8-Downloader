@@ -1,5 +1,5 @@
 const os = require('os')
-const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, ipcMain, shell, Menu, dialog, nativeImage, session } = require('electron');
 const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -16,13 +16,13 @@ const package_self = require('./package.json');
 const appInfo = package_self;
 const winston = require('winston');
 const nconf = require('nconf');
-const { dir } = require('console');
 let ffmpegPath = require('ffmpeg-static');
 const contextMenu = require('electron-context-menu');
 const Aria2 = require('aria2');
 const forever = require('forever-monitor');
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const url = require('url');
+const GA4 = require('./GA4');
 
 contextMenu({ showCopyImage: false, showCopyImageAddress: false, showInspectElement: false, showServices: false });
 
@@ -160,9 +160,13 @@ function createWindow() {
     // 与此同时，你应该删除相应的元素。
     mainWindow = null;
   });
-  mainWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
-    event.preventDefault()
-    shell.openExternal(url);
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders['referer'] = referer;
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 }
 function createPlayerWindow(src) {
@@ -303,34 +307,12 @@ app.on('ready', () => {
   (async () => {
     try {
       checkUpdate();
-
       setInterval(checkUpdate, 600000);
-
-      let HMACCOUNT = nconf.get('HMACCOUNT');
-      if (!HMACCOUNT) HMACCOUNT = '';
-      const { headers } = await got("http://hm.baidu.com/hm.js?300991eff395036b1ba22ae155143ff3", {
-        headers: { "Referer": referer, "Cookie": "HMACCOUNT=" + HMACCOUNT }, https: {
-          rejectUnauthorized: false
-        }
-      });
-      try {
-        HMACCOUNT = headers['set-cookie'] && headers['set-cookie'][0].match(/HMACCOUNT=(.*?);/i)[1];
-        if (HMACCOUNT) {
-          nconf.set('HMACCOUNT', HMACCOUNT);
-          nconf.save();
-        }
-      } catch (error_) {
-        logger.error(error_)
-      }
-      logger.info(HMACCOUNT);
-      await got(`http://hm.baidu.com/hm.gif?hca=${HMACCOUNT}&cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&ep=6621%2C1598&et=3&ja=0&ln=zh-cn&lo=0&lt=${(new Date().getTime() / 1000)}&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=3&sn=0&r=0&ww=1920&u=${encodeURIComponent(referer)}`, { headers: { "Referer": referer, "Cookie": "HMACCOUNT=" + HMACCOUNT } });
-      await got(`http://hm.baidu.com/hm.gif?cc=1&ck=1&cl=24-bit&ds=1920x1080&vl=977&et=0&ja=0&ln=zh-cn&lo=0&rnd=0&si=300991eff395036b1ba22ae155143ff3&v=1.2.74&lv=1&sn=0&r=0&ww=1920&ct=!!&tt=M3U8Soft-Client`, { headers: { "Referer": referer, "Cookie": "HMACCOUNT=" + HMACCOUNT } });
-
-      logger.info("call baidu-tong-ji end.");
     } catch (error) {
       logger.error(error)
     }
   })();
+  GA4.sendEvent('open', { time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss") });
   return;
 
   const EMPTY_STRING = '';
@@ -853,6 +835,8 @@ async function startDownload(object, iidx) {
   }
 
   logger.info(dir);
+
+  GA4.sendEvent('download', { time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), url: url_src });
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -1465,7 +1449,8 @@ ipcMain.on('open-select-ts-dir', function (event, arg) {
 });
 
 ipcMain.on('start-merge-ts', async function (event, task) {
-  if (!task) return
+  if (!task) return;
+  GA4.sendEvent('video_merge', { time: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss") });
   let name = task.name ? task.name : (new Date().getTime() + '');
 
   let dir = path.join(globalConfigSaveVideoDir, name);
